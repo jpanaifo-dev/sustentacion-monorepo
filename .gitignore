@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+*.env
+.env.*
+!.env.example
+*.log
+.session-cookies.txt
+.session-cookies*
+coverage/
+.cache/
+.turbo/
+.vscode/
+docker-compose.override.yml
+uploads/

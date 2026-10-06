@@ -1,0 +1,10 @@
+{
+  "name": "sustentacion-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @epg/web --filter @epg/api dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  }
+}
