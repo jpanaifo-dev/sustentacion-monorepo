@@ -13,3 +13,4 @@ coverage/
 .vscode/
 docker-compose.override.yml
 uploads/
+backups/
