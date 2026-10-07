@@ -68,43 +68,18 @@
   }
 }
 
-/* Public defense detail: editorial, warm and institutional visual language. */
+/* Public defense detail: editorial, warm paper and institutional aesthetic */
 .public-detail {
-  background: #f7f3e7;
-  color: #102b45;
+  background-color: #FAF8F5;
+  color: #0F172A;
 }
 
-.public-detail .detail-title {
-  color: #102b45;
-  font-weight: 800;
-  letter-spacing: -0.045em;
+.font-editorial-serif {
+  font-family: "Playfair Display", Georgia, serif;
 }
 
-.public-detail .detail-hero .text-white,
-.public-detail .detail-hero .text-slate-300,
-.public-detail .detail-hero .text-slate-400 {
-  color: #5c665f;
-}
-
-.public-detail .detail-strip {
-  border-color: #d9d4c7;
-  background: #f2eddf;
-  color: #102b45;
-  --tw-divide-opacity: 1;
-  --tw-divide-color: #d9d4c7;
-}
-
-.public-detail .bg-white {
-  background-color: #fffdf2;
-  border-color: #d9d4c7;
-}
-
-.public-detail .bg-slate-50 {
-  background-color: #f2eddf;
-}
-
-.public-detail h2 {
-  letter-spacing: -0.025em;
+.font-editorial-sans {
+  font-family: "Plus Jakarta Sans", "Poppins", sans-serif;
 }
 
 @layer utilities {
