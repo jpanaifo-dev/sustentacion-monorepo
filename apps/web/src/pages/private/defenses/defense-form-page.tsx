@@ -13,6 +13,7 @@ import { detectScheduleConflicts } from '../../../services/conflictChecker';
 import { defenseDraftSchema, defenseConfirmSchema, DefenseDraftInput } from '../../../schemas';
 import { PageHeader } from '../../../components/shared/page-header';
 import { ConflictCheckerAlert } from '../../../components/shared/conflict-checker-alert';
+import { ActaOcrUploader } from '../../../components/shared/acta-ocr-uploader';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -39,6 +40,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { JurorRole, ParticipantType } from '../../../types';
+import { ExtractedDefenseFields } from '../../../services/acta-ocr.service';
 import { toast } from 'sonner';
 
 const normalizeDateInput = (value?: string | null) => {
@@ -482,6 +484,16 @@ export const DefenseFormPage: React.FC = () => {
     })();
   };
 
+  const applyActaFields = (fields: ExtractedDefenseFields) => {
+    const applied: string[] = [];
+    if (fields.title) { setValue('title', fields.title, { shouldDirty: true, shouldValidate: true }); applied.push('título'); }
+    if (fields.office_number) { setValue('office_number', fields.office_number, { shouldDirty: true, shouldValidate: true }); applied.push('documento'); }
+    if (fields.scheduled_date) { setValue('scheduled_date', fields.scheduled_date, { shouldDirty: true, shouldValidate: true }); applied.push('fecha'); }
+    if (fields.start_time) { setValue('start_time', fields.start_time, { shouldDirty: true, shouldValidate: true }); applied.push('hora'); }
+    if (fields.modality) { setValue('modality', fields.modality, { shouldDirty: true, shouldValidate: true }); applied.push('modalidad'); }
+    toast.success('Campos del acta aplicados', { description: applied.length ? `Se completaron: ${applied.join(', ')}. Revísalos antes de guardar.` : 'No hubo campos seguros para completar.' });
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
       <div className="flex items-center justify-between">
@@ -502,6 +514,8 @@ export const DefenseFormPage: React.FC = () => {
         title={isEditing ? `Editar Sustentación: ${existingDefense?.code || ''}` : 'Nueva Sustentación de Tesis'}
         description="Complete la información académica, participantes y asignación de espacio físico o virtual."
       />
+
+      {!isEditing && <ActaOcrUploader onApply={applyActaFields} />}
 
       {/* Conflict Warnings Banner */}
       <ConflictCheckerAlert conflicts={conflicts} />
