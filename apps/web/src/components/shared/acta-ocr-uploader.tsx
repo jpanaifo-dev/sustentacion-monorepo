@@ -57,6 +57,10 @@ export const ActaOcrUploader: React.FC<Props> = ({ onApply }) => {
             <div><span className="font-semibold text-slate-500">Hora</span><p className="text-slate-900">{result.fields.start_time || 'No detectada'}</p></div>
           </div>
           <Button type="button" onClick={() => onApply(result.fields)} disabled={!detected} className="w-full sm:w-auto">Aplicar campos detectados</Button>
+          <details className="rounded-md border border-emerald-100 bg-white/70 p-2 text-xs text-slate-600">
+            <summary className="cursor-pointer font-medium text-slate-700">Ver texto reconocido</summary>
+            <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap font-sans">{result.text || 'El OCR no devolvió texto.'}</pre>
+          </details>
         </div>}
       </CardContent>
     </Card>

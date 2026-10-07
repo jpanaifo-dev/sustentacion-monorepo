@@ -49,13 +49,23 @@ const parseTime = (text: string): string | undefined => {
 const lineAfter = (text: string, labels: string[]) => {
   const lines = text.split(/\r?\n/).map(clean).filter(Boolean);
   const label = labels.join('|');
-  const match = lines.find((line) => new RegExp(`(?:${label})\\s*[:\\-]\\s*.+`, 'i').test(line));
-  return match ? clean(match.replace(new RegExp(`^(?:${label})\\s*[:\\-]?\\s*`, 'i'), '')) : undefined;
+  const labelPattern = new RegExp(`^(?:${label})\\s*(?:[:\\-]|$)`, 'i');
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!labelPattern.test(lines[index])) continue;
+    const inline = clean(lines[index].replace(labelPattern, ''));
+    if (inline.length > 4) return inline;
+    const next = lines.slice(index + 1, index + 3).find((line) => line.length > 4 && !/^(?:fecha|hora|modalidad|oficio|documento)\b/i.test(line));
+    if (next) return next;
+  }
+  return undefined;
 };
 
 export const parseActaText = (text: string): ExtractedDefenseFields => {
   const normalized = text.replace(/\u00a0/g, ' ');
-  const title = lineAfter(normalized, ['título de tesis', 'titulo de tesis', 'título', 'titulo', 'tema de tesis']);
+  const title = lineAfter(normalized, [
+    'título de la investigación', 'titulo de la investigacion', 'título de tesis', 'titulo de tesis',
+    'título de la tesis', 'titulo de la tesis', 'tema de tesis', 'tema de la tesis', 'título', 'titulo', 'tema', 'tesis',
+  ]);
   const officeMatch = normalized.match(/(?:n(?:úmero|umero)?\s+de\s+)?(?:oficio|documento|acta)\s*(?:n[.°º]?\s*)?[:\-#]?\s*([A-Z0-9][A-Z0-9./-]{4,})/i);
   const dateMatch = normalized.match(/\b\d{1,2}[\/-]\d{1,2}[\/-]\d{4}\b|\b\d{1,2}\s+de\s+[a-záéíóú]+\s+de\s+\d{4}\b/i);
   const date = dateMatch ? toIsoDate(dateMatch[0]) : undefined;
