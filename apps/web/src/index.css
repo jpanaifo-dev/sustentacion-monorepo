@@ -72,14 +72,33 @@
 .public-detail {
   background-color: #FAF8F5;
   color: #0F172A;
+  font-family: "Poppins", sans-serif;
 }
 
-.font-editorial-serif {
-  font-family: "Playfair Display", Georgia, serif;
+.public-detail h2 {
+  font-size: 1.125rem !important;
+  line-height: 1.45;
+  letter-spacing: -0.025em;
 }
 
+.public-detail section,
+.public-detail .rounded-sm {
+  border-radius: 0.375rem !important;
+}
+
+.public-detail svg {
+  display: none;
+}
+
+.public-detail section .h-8.w-8:has(> svg),
+.public-detail section .h-10.w-10:has(> svg),
+.public-detail .h-12.w-12:has(> svg) {
+  display: none;
+}
+
+.font-editorial-serif,
 .font-editorial-sans {
-  font-family: "Plus Jakarta Sans", "Poppins", sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 @layer utilities {
