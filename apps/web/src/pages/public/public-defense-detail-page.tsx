@@ -115,7 +115,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
             <Info className="h-7 w-7 text-slate-700" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-serif font-bold text-[#091E3A]">
+            <h2 className="text-2xl font-poppins font-bold text-[#091E3A]">
               Sustentación no encontrada
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -261,8 +261,8 @@ export const PublicDefenseDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Editorial Thesis Title (Playfair Display / Serif Inspiration from Reference 2 & 4) */}
-            <h1 className="font-serif font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#091E3A] tracking-tight leading-[1.18] pt-1">
+            {/* Editorial Thesis Title (Poppins) */}
+            <h1 className="font-poppins font-extrabold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#091E3A] tracking-tight leading-[1.18] pt-1">
               {defense.title}
             </h1>
           </div>
