@@ -98,7 +98,8 @@ export const PublicDefenseDetailPage: React.FC = () => {
   const advisors = (defense.participants || []).filter((p) => p.participant_type === 'ADVISOR');
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="public-detail min-h-full bg-[#f7f3e7] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl space-y-8 pb-16">
       {/* Navigation bar & Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
@@ -154,7 +155,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
       </div>
 
       {/* Main Hero Header Card */}
-      <div className="bg-[#091E3A] text-white border border-[#091E3A] rounded-sm overflow-hidden shadow-sm">
+      <div className="detail-hero bg-[#fffdf2] text-[#102b45] border-y-4 border-[#d7b43a] overflow-hidden shadow-sm">
         <div className="p-6 sm:p-8 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs font-semibold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-sm">
@@ -171,7 +172,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
             )}
           </div>
 
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white tracking-tight leading-snug">
+          <h1 className="detail-title text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight leading-snug">
             {defense.title}
           </h1>
 
@@ -186,7 +187,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
         </div>
 
         {/* Quick Info Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 bg-[#061528] border-t border-slate-800 text-xs divide-x divide-y md:divide-y-0 divide-slate-800">
+        <div className="detail-strip grid grid-cols-2 md:grid-cols-4 border-t text-xs divide-x divide-y md:divide-y-0">
           <div className="p-4 space-y-1">
             <div className="text-slate-400 font-medium text-[11px] flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-amber-400" />
@@ -465,6 +466,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
