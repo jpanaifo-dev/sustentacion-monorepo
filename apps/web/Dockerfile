@@ -1,7 +1,7 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --no-frozen-lockfile
+RUN corepack enable && pnpm install --no-frozen-lockfile --allow-build=tesseract.js
 COPY . .
 ARG VITE_API_URL=http://localhost:8787
 ENV VITE_API_URL=$VITE_API_URL

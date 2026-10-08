@@ -14,6 +14,7 @@ import { DefenseFormPage } from '../../pages/private/defenses/defense-form-page'
 import { UnitsPage } from '../../pages/private/units/units-page';
 import { FacilitiesPage } from '../../pages/private/facilities/facilities-page';
 import { SpacesPage } from '../../pages/private/spaces/spaces-page';
+import { SpaceDetailPage } from '../../pages/private/spaces/space-detail-page';
 import { PersonsPage } from '../../pages/private/persons/persons-page';
 import { UsersPage } from '../../pages/private/users/users-page';
 import { AuditPage } from '../../pages/private/audit/audit-page';
@@ -58,14 +59,11 @@ export const router = createBrowserRouter([
     path: '/admin',
     children: [
       { path: 'login', element: <AdminLoginPage /> },
+      { path: 'agenda', element: <ProtectedAdmin><AgendaCalendarPage /></ProtectedAdmin> },
       { element: <ProtectedAdmin><AdminLayout /></ProtectedAdmin>, children: [
       {
         index: true,
         element: <DashboardPage />,
-      },
-      {
-        path: 'agenda',
-        element: <AgendaCalendarPage />,
       },
       {
         path: 'defenses',
@@ -94,6 +92,14 @@ export const router = createBrowserRouter([
       {
         path: 'spaces',
         element: <SpacesPage />,
+      },
+      {
+        path: 'spaces/:id',
+        element: <SpaceDetailPage />,
+      },
+      {
+        path: 'spaces/:id/availability',
+        element: <SpaceDetailPage />,
       },
       {
         path: 'persons',

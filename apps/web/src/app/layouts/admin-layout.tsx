@@ -39,8 +39,9 @@ export const AdminLayout: React.FC = () => {
     { label: 'Configuración', path: '/admin/settings', icon: Settings, permission: 'roles.view' },
   ];
 
+  const isAgendaManager = user?.roles.includes('AGENDA_MANAGER') && !user.isSuperAdmin;
   const visibleNav = navItems.filter(
-    (item) => !item.permission || hasPermission(item.permission)
+    (item) => (!item.permission || hasPermission(item.permission)) && !(isAgendaManager && item.path === '/admin/defenses')
   );
 
   const demoRoles: { code: RoleCode; label: string }[] = [

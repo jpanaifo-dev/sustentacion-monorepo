@@ -71,6 +71,10 @@ export const api = {
   holidays: {
     get: async (year: number) => request(`/api/holidays?year=${year}`),
   },
+  agendaHours: {
+    get: async () => request('/api/settings/agenda-hours'),
+    save: async (hours: { start: string; end: string }) => request('/api/settings/agenda-hours', { method: 'PUT', body: JSON.stringify(hours) }),
+  },
   programs: {
     get: async (search?: string) => request(`/api/programs${search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : ''}`),
   },

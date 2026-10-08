@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { spacesService } from '../../../services/spaces.service';
 import { facilitiesService } from '../../../services/facilities.service';
@@ -19,10 +20,11 @@ import {
 } from '../../../components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
 import { Space, SpaceType } from '../../../types';
-import { Plus, DoorOpen, Users, FileEdit, Power, Image as ImageIcon, Upload, Trash2, Search } from 'lucide-react';
+import { Plus, DoorOpen, Users, FileEdit, Power, Image as ImageIcon, Upload, Trash2, Search, MoreVertical } from 'lucide-react';
 
 export const SpacesPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [imagesModalOpen, setImagesModalOpen] = useState(false);
   const [editingSpace, setEditingSpace] = useState<Space | null>(null);
@@ -30,6 +32,8 @@ export const SpacesPage: React.FC = () => {
   const [deletingSpace, setDeletingSpace] = useState<Space | null>(null);
   const [search, setSearch] = useState('');
   const [selectedFacilityId, setSelectedFacilityId] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [spaceToToggle, setSpaceToToggle] = useState<Space | null>(null);
 
   const [formData, setFormData] = useState({
     facility_id: '',
@@ -51,14 +55,18 @@ export const SpacesPage: React.FC = () => {
     queryFn: () => facilitiesService.getFacilities(),
   });
 
+  const defaultFacilityId = facilities.find((facility) => /sede\s+central/i.test(facility.name))?.id;
+  const activeFacilityId = selectedFacilityId === '__ALL__' ? undefined : selectedFacilityId === 'ALL' ? defaultFacilityId : selectedFacilityId;
   const filteredSpaces = spaces.filter((space) => {
     const query = search.trim().toLowerCase();
-    if (selectedFacilityId !== 'ALL' && space.facility_id !== selectedFacilityId) return false;
+    if (activeFacilityId && space.facility_id !== activeFacilityId) return false;
+    if (statusFilter === 'ACTIVE' && !space.is_active) return false;
+    if (statusFilter === 'INACTIVE' && space.is_active) return false;
     if (!query) return true;
     return [space.name, space.type, space.floor, space.location_reference, space.description, space.facility?.name]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query));
-  });
+  }).sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' }));
 
   const { data: spaceMedia = [] } = useQuery({
     queryKey: ['media', 'space', selectedSpaceForImages?.id],
@@ -73,10 +81,11 @@ export const SpacesPage: React.FC = () => {
       }
       return spacesService.createSpace({ ...formData, is_active: true });
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ['spaces'] });
       setModalOpen(false);
       setEditingSpace(null);
+      if (!editingSpace) navigate(`/admin/spaces/${saved.id}`);
     },
   });
 
@@ -122,7 +131,7 @@ export const SpacesPage: React.FC = () => {
     } else {
       setEditingSpace(null);
       setFormData({
-        facility_id: facilities[0]?.id || '',
+        facility_id: defaultFacilityId || facilities[0]?.id || '',
         name: '',
         type: 'CLASSROOM',
         capacity: 30,
@@ -152,12 +161,14 @@ export const SpacesPage: React.FC = () => {
           <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por espacio, sede, tipo o piso..." className="bg-white pl-9" />
         </div>
         <select value={selectedFacilityId} onChange={(event) => setSelectedFacilityId(event.target.value)} className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 sm:w-72">
-          <option value="ALL">Todas las sedes</option>
+          <option value="ALL">Sede Central (predeterminado)</option>
+          <option value="__ALL__">Todas las sedes</option>
           {facilities.map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}
         </select>
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 sm:w-44"><option value="ALL">Todos los estados</option><option value="ACTIVE">Habilitados</option><option value="INACTIVE">Inactivos</option></select>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-visible">
         {isLoading ? (
           <div className="p-8 text-center text-slate-500 text-sm">Cargando espacios...</div>
         ) : (
@@ -176,7 +187,7 @@ export const SpacesPage: React.FC = () => {
               {filteredSpaces.map((space) => (
                 <TableRow key={space.id}>
                   <TableCell>
-                    <div className="font-bold text-slate-900 text-sm">{space.name}</div>
+                    <Link to={`/admin/spaces/${space.id}`} className="font-bold text-slate-900 text-sm hover:text-unap-navy hover:underline">{space.name}</Link>
                     <div className="text-xs text-slate-500 mt-0.5">{space.description}</div>
                   </TableCell>
                   <TableCell className="text-xs font-semibold text-slate-700">
@@ -202,32 +213,7 @@ export const SpacesPage: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        title="Ver / Subir Fotos"
-                        onClick={() => {
-                          setSelectedSpaceForImages(space);
-                          setImagesModalOpen(true);
-                        }}
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600" onClick={() => handleOpen(space)}>
-                        <FileEdit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-8 w-8 ${space.is_active ? 'text-amber-600' : 'text-emerald-600'}`}
-                        onClick={() => toggleMutation.mutate(space)}
-                      >
-                        <Power className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600" title="Eliminar espacio" onClick={() => setDeletingSpace(space)}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
+                    <details className="relative inline-block text-left"><summary className="list-none cursor-pointer rounded-md p-2 text-slate-600 hover:bg-slate-100"><MoreVertical className="h-4 w-4" /></summary><div className="absolute right-0 z-50 mt-1 w-52 rounded-md border bg-white p-1 text-left shadow-lg"><Link className="block rounded px-3 py-2 text-sm hover:bg-slate-50" to={`/admin/spaces/${space.id}`}>Editar datos y fotos</Link><Link className="block rounded px-3 py-2 text-sm hover:bg-slate-50" to={`/admin/spaces/${space.id}/availability`}>Disponibilidad e historial</Link><button className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => setSpaceToToggle(space)}>{space.is_active ? 'Desactivar aula' : 'Activar aula'}</button><button className="block w-full rounded px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50" onClick={() => setDeletingSpace(space)}>Eliminar</button></div></details>
                   </TableCell>
                 </TableRow>
               ))}
@@ -237,6 +223,7 @@ export const SpacesPage: React.FC = () => {
       </div>
 
       <ConfirmModal open={!!deletingSpace} onOpenChange={(open) => !open && setDeletingSpace(null)} title="Eliminar espacio" description={`¿Confirmas eliminar el espacio ${deletingSpace?.name ?? ''}? Esta acción no se puede deshacer.`} confirmLabel={deleteMutation.isPending ? 'Eliminando…' : 'Eliminar'} variant="destructive" onConfirm={() => deletingSpace && deleteMutation.mutate(deletingSpace)} />
+      <ConfirmModal open={!!spaceToToggle} onOpenChange={(open) => !open && setSpaceToToggle(null)} title={spaceToToggle?.is_active ? 'Desactivar aula' : 'Activar aula'} description={spaceToToggle?.is_active ? `El aula ${spaceToToggle.name} dejará de estar disponible para nuevas sustentaciones. Los eventos registrados se conservarán.` : `El aula ${spaceToToggle?.name} volverá a estar disponible para selección.`} confirmLabel={spaceToToggle?.is_active ? 'Desactivar' : 'Activar'} variant={spaceToToggle?.is_active ? 'destructive' : 'default'} onConfirm={() => spaceToToggle && toggleMutation.mutate(spaceToToggle)} />
 
       {/* Create/Edit Space Dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

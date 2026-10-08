@@ -445,7 +445,36 @@ app.post('/api/send-defense-notification', { preHandler: (app as any).authentica
   return { success: true, message: 'Notificación registrada correctamente.' };
 });
 
-const resources = ['profiles', 'roles', 'user_roles', 'user_units', 'units', 'facilities', 'spaces', 'persons', 'defense_participants', 'defense_reschedules', 'notifications', 'audit_logs', 'media'] as const;
+app.get('/api/settings/agenda-hours', async () => {
+  const result = await pool.query<{ value: { start: string; end: string } }>(
+    "select value from system_settings where key = 'agenda_hours' limit 1",
+  );
+  return result.rows[0]?.value ?? { start: '07:00', end: '14:00' };
+});
+
+app.put('/api/settings/agenda-hours', { preHandler: (app as any).authenticate }, async (request, reply) => {
+  const userId = (request as any).user?.sub;
+  const permissions = await pool.query(
+    `select 1 from user_roles ur join roles r on r.id = ur.role_id
+     where ur.user_id = $1 and r.code in ('SUPER_ADMIN', 'ADMIN') limit 1`,
+    [userId],
+  );
+  if (!permissions.rowCount) return reply.code(403).send({ error: 'Solo un administrador puede cambiar el horario global.' });
+  const { start, end } = request.body as { start?: string; end?: string };
+  const validTime = (value?: string) => !!value && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  if (!validTime(start) || !validTime(end) || start! < '06:00' || end! > '23:00' || start! >= end!) {
+    return reply.code(400).send({ error: 'El horario debe estar entre las 06:00 y las 23:00 y la hora de fin debe ser posterior al inicio.' });
+  }
+  const value = JSON.stringify({ start, end });
+  const result = await pool.query(
+    `insert into system_settings (key, value, description) values ('agenda_hours', $1::jsonb, 'Horario global de atención de la agenda')
+     on conflict (key) do update set value = excluded.value, updated_at = now() returning value`,
+    [value],
+  );
+  return result.rows[0].value;
+});
+
+const resources = ['profiles', 'roles', 'user_roles', 'user_units', 'units', 'facilities', 'spaces', 'space_unavailability', 'persons', 'defense_participants', 'defense_reschedules', 'notifications', 'audit_logs', 'media'] as const;
 for (const resource of resources) {
   app.get(`/api/${resource}`, async (request) => {
     const query = request.query as Record<string, string | undefined>;

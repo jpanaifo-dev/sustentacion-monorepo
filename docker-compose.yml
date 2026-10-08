@@ -9,9 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-epg-local-password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./apps/api/db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
-      - ./apps/api/db/seed-units.sql:/docker-entrypoint-initdb.d/002-seed-units.sql:ro
-      - ./apps/api/db/seed-spaces.sql:/docker-entrypoint-initdb.d/003-seed-spaces.sql:ro
+      - ./apps/api/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-epg} -d ${POSTGRES_DB:-epg}"]
       interval: 5s

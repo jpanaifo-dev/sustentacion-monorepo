@@ -52,9 +52,12 @@ export const ActaOcrUploader: React.FC<Props> = ({ onApply }) => {
           <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold text-emerald-900">{detected ? `${detected} campos detectados` : 'No se detectaron campos con seguridad'} · {result.pages} página(s)</p><CheckCircle2 className="h-4 w-4 text-emerald-600" /></div>
           <div className="grid gap-2 text-xs sm:grid-cols-2">
             <div><span className="font-semibold text-slate-500">Título</span><p className="text-slate-900">{result.fields.title || 'No detectado'}</p></div>
-            <div><span className="font-semibold text-slate-500">Oficio / documento</span><p className="text-slate-900">{result.fields.office_number || 'No detectado'}</p></div>
+            <div><span className="font-semibold text-slate-500">Código de oficio</span><p className="text-slate-900">{result.fields.office_number || 'No detectado'}</p></div>
+            <div><span className="font-semibold text-slate-500">Programa de posgrado</span><p className="text-slate-900">{result.fields.program_name || 'No detectado'}</p></div>
             <div><span className="font-semibold text-slate-500">Fecha</span><p className="text-slate-900">{result.fields.scheduled_date || 'No detectada'}</p></div>
             <div><span className="font-semibold text-slate-500">Hora</span><p className="text-slate-900">{result.fields.start_time || 'No detectada'}</p></div>
+            <div><span className="font-semibold text-slate-500">Asesor</span><p className="text-slate-900">{result.fields.advisor_name || 'No detectado'}</p></div>
+            <div><span className="font-semibold text-slate-500">Jurado evaluador y dictaminador</span><p className="text-slate-900">{result.fields.juror_names?.join(', ') || 'No detectados'}</p></div>
           </div>
           <Button type="button" onClick={() => onApply(result.fields)} disabled={!detected} className="w-full sm:w-auto">Aplicar campos detectados</Button>
           <details className="rounded-md border border-emerald-100 bg-white/70 p-2 text-xs text-slate-600">

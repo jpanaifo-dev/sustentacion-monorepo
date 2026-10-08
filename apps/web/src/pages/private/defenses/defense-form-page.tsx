@@ -7,6 +7,7 @@ import { defensesService, CreateDefensePayload } from '../../../services/defense
 import { unitsService } from '../../../services/units.service';
 import { facilitiesService } from '../../../services/facilities.service';
 import { spacesService } from '../../../services/spaces.service';
+import { spaceAvailabilityService } from '../../../services/space-availability.service';
 import { personsService } from '../../../services/persons.service';
 import { programsService } from '../../../services/programs.service';
 import { detectScheduleConflicts } from '../../../services/conflictChecker';
@@ -42,6 +43,7 @@ import {
 import { JurorRole, ParticipantType } from '../../../types';
 import { ExtractedDefenseFields } from '../../../services/acta-ocr.service';
 import { toast } from 'sonner';
+import { useAuth } from '../../../app/providers/auth-provider';
 
 const normalizeDateInput = (value?: string | null) => {
   if (!value) return '';
@@ -100,6 +102,8 @@ const SaveActionSelect: React.FC<{ disabled?: boolean; onSave: (asConfirmed: boo
 };
 
 export const DefenseFormPage: React.FC = () => {
+  const { hasRole } = useAuth();
+  const isDefenseManager = hasRole('DEFENSE_MANAGER');
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
   const navigate = useNavigate();
@@ -124,6 +128,7 @@ export const DefenseFormPage: React.FC = () => {
   const { data: units = [] } = useQuery({ queryKey: ['units'], queryFn: () => unitsService.getUnits() });
   const { data: facilities = [] } = useQuery({ queryKey: ['facilities'], queryFn: () => facilitiesService.getFacilities() });
   const { data: spaces = [] } = useQuery({ queryKey: ['spaces'], queryFn: () => spacesService.getSpaces() });
+  const { data: spaceBlocks = [] } = useQuery({ queryKey: ['space-unavailability'], queryFn: () => spaceAvailabilityService.getAll() });
   const { data: persons = [] } = useQuery({ queryKey: ['persons'], queryFn: () => personsService.getPersons() });
   const { data: institutionalPersonResults = [], isFetching: isSearchingPersons } = useQuery({
     queryKey: ['persons-search', participantSearch.trim()],
@@ -338,10 +343,16 @@ export const DefenseFormPage: React.FC = () => {
   const filteredUnits = units.filter((unit) => `${unit.acronym || ''} ${unit.name}`.toLowerCase().includes(unitSearch.trim().toLowerCase()));
   const selectedUnit = units.find((unit) => unit.id === watchedUnitId);
 
+  const calculatedEndTime = watchedStartTime
+    ? calculateEndTime(watchedStartTime, Number(watchedDuration))
+    : '12:00:00';
+
   // Filtered spaces by selected facility
-  const availableSpaces = watchedFacilityId
+  const requestedStart = watchedDate && watchedStartTime ? new Date(`${watchedDate}T${watchedStartTime}`).toISOString() : '';
+  const requestedEnd = watchedDate && calculatedEndTime ? new Date(`${watchedDate}T${calculatedEndTime}`).toISOString() : '';
+  const availableSpaces = (watchedFacilityId
     ? spaces.filter((s) => s.facility_id === watchedFacilityId && s.is_active)
-    : spaces.filter((s) => s.is_active);
+    : spaces.filter((s) => s.is_active)).filter((space) => !requestedStart || !requestedEnd || !spaceBlocks.some((block) => block.space_id === space.id && spaceAvailabilityService.overlaps(block, requestedStart, requestedEnd)));
 
   // Set initial values when editing
   useEffect(() => {
@@ -372,16 +383,18 @@ export const DefenseFormPage: React.FC = () => {
       });
     } else if (units.length > 0 && facilities.length > 0) {
       setValue('unit_id', units[0].id);
-      setValue('facility_id', facilities[0].id);
-      const firstSpace = spaces.find((s) => s.facility_id === facilities[0].id);
-      if (firstSpace) setValue('space_id', firstSpace.id);
+      const defaultFacility = isDefenseManager
+        ? facilities.find((facility) => /central/i.test(facility.name)) || facilities[0]
+        : facilities[0];
+      setValue('facility_id', defaultFacility.id);
+      if (isDefenseManager) {
+        setValue('space_id', null);
+      } else {
+        const firstSpace = spaces.find((space) => space.facility_id === defaultFacility.id);
+        if (firstSpace) setValue('space_id', firstSpace.id);
+      }
     }
-  }, [existingDefense, units, facilities, spaces, reset, setValue]);
-
-  // Calculated End Time
-  const calculatedEndTime = watchedStartTime
-    ? calculateEndTime(watchedStartTime, Number(watchedDuration))
-    : '12:00:00';
+  }, [existingDefense, units, facilities, spaces, isDefenseManager, reset, setValue]);
 
   // Live Conflict Detection
   const participantPersonIds = watchedParticipants
@@ -451,7 +464,9 @@ export const DefenseFormPage: React.FC = () => {
         estimated_duration_minutes: Number(data.estimated_duration_minutes),
         modality: data.modality,
         facility_id: data.facility_id || null,
-        space_id: data.space_id || null,
+        space_id: isDefenseManager
+          ? (existingDefense?.facility_id === data.facility_id ? existingDefense?.space_id || null : null)
+          : data.space_id || null,
         virtual_platform: data.virtual_platform || null,
         virtual_url: data.virtual_url || null,
         observations: data.observations || null,
@@ -484,14 +499,53 @@ export const DefenseFormPage: React.FC = () => {
     })();
   };
 
-  const applyActaFields = (fields: ExtractedDefenseFields) => {
+  const applyActaFields = async (fields: ExtractedDefenseFields) => {
     const applied: string[] = [];
+    const unmatchedPeople: string[] = [];
+    let programNeedsSelection = false;
     if (fields.title) { setValue('title', fields.title, { shouldDirty: true, shouldValidate: true }); applied.push('título'); }
     if (fields.office_number) { setValue('office_number', fields.office_number, { shouldDirty: true, shouldValidate: true }); applied.push('documento'); }
     if (fields.scheduled_date) { setValue('scheduled_date', fields.scheduled_date, { shouldDirty: true, shouldValidate: true }); applied.push('fecha'); }
     if (fields.start_time) { setValue('start_time', fields.start_time, { shouldDirty: true, shouldValidate: true }); applied.push('hora'); }
     if (fields.modality) { setValue('modality', fields.modality, { shouldDirty: true, shouldValidate: true }); applied.push('modalidad'); }
-    toast.success('Campos del acta aplicados', { description: applied.length ? `Se completaron: ${applied.join(', ')}. Revísalos antes de guardar.` : 'No hubo campos seguros para completar.' });
+    if (fields.program_name) {
+      setProgramSearch(fields.program_name);
+      setProgramMenuOpen(true);
+      try {
+        const candidates = await programsService.getPrograms(fields.program_name);
+        const normalizeProgram = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const extractedName = normalizeProgram(fields.program_name);
+        const matchedProgram = candidates.find((program) => normalizeProgram(program.name) === extractedName)
+          || candidates.find((program) => extractedName.length > 8 && normalizeProgram(program.name).includes(extractedName));
+        if (matchedProgram) {
+          setValue('program_uuid', matchedProgram.uuid, { shouldValidate: true, shouldDirty: true });
+          setValue('program_code', matchedProgram.code, { shouldValidate: true, shouldDirty: true });
+          setValue('program_name', matchedProgram.name, { shouldValidate: true, shouldDirty: true });
+          setValue('unit_id', matchedProgram.unit_uuid, { shouldValidate: true, shouldDirty: true });
+          setProgramSearch('');
+          setProgramMenuOpen(false);
+          applied.push('programa');
+        } else {
+          programNeedsSelection = true;
+        }
+      } catch {
+        programNeedsSelection = true;
+      }
+    }
+    const normalizeName = (value: string) => value
+      .replace(/^(?:(?:dr|dra|mg|mtra|mtro|ing|lic|abg|msc|m\.sc|phd|ph\.d)\.?\s*)+/i, '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    const addMatchedPerson = (name: string, type: 'ADVISOR' | 'JUROR') => {
+      const normalized = normalizeName(name);
+      const person = persons.find((candidate) => normalizeName(`${candidate.first_name || ''} ${candidate.last_name || ''}`) === normalized);
+      if (!person) { unmatchedPeople.push(name); return; }
+      if (watchedParticipants.some((participant: any) => participant.person_id === person.id)) return;
+      append({ person_id: person.id, participant_type: type, role: type === 'JUROR' ? 'MEMBER' : null, is_primary: false });
+    };
+    if (fields.advisor_name) { addMatchedPerson(fields.advisor_name, 'ADVISOR'); applied.push('asesor'); }
+    fields.juror_names?.forEach((name) => addMatchedPerson(name, 'JUROR'));
+    if (fields.juror_names?.length) applied.push('jurado');
+    toast.success('Campos del acta aplicados', { description: `${applied.length ? `Se completaron: ${applied.join(', ')}. ` : ''}${programNeedsSelection ? 'Verifica el programa reconocido y selecciónalo en el listado. ' : ''}${unmatchedPeople.length ? `No se encontraron en el padrón: ${unmatchedPeople.join(', ')}. Agrégalos manualmente.` : 'Revísalos antes de guardar.'}` });
   };
 
   return (
@@ -729,8 +783,38 @@ export const DefenseFormPage: React.FC = () => {
           </CardContent>
         </Card>
 
+        {isDefenseManager && (
+          <Card className="shadow-xs">
+            <CardHeader className="border-b border-slate-100 pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+                <MapPin className="h-4 w-4 text-unap-navy" />
+                Sede de la sustentación
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Selecciona la sede; el gestor de agenda asignará el aula según su disponibilidad.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1.5 pt-5">
+              <Label htmlFor="defense_facility_id" className="text-xs font-semibold">Sede</Label>
+              <select
+                id="defense_facility_id"
+                value={watchedFacilityId || ''}
+                onChange={(event) => {
+                  const nextFacilityId = event.target.value;
+                  setValue('facility_id', nextFacilityId || null, { shouldValidate: true, shouldDirty: true });
+                  if (nextFacilityId !== watchedFacilityId) setValue('space_id', null, { shouldValidate: true, shouldDirty: true });
+                }}
+                className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-unap-navy"
+              >
+                <option value="">Seleccione una sede...</option>
+                {facilities.map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}
+              </select>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Section 3: Ubicación y Espacio Físico / Virtual */}
-        <Card className="shadow-xs">
+        <Card className={isDefenseManager ? 'hidden' : 'shadow-xs'}>
           <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-start justify-between gap-4">
             <div>
               <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">

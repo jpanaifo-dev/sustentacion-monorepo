@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PageHeader } from '../../../components/shared/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Settings, Shield, Clock, Eye, AlertTriangle, Save } from 'lucide-react';
+import { getAgendaHours, isValidAgendaHours, readAgendaHours, saveAgendaHours } from '../../../services/agenda-hours.service';
 
 export const SettingsPage: React.FC = () => {
   const [duration, setDuration] = useState(120);
@@ -12,17 +13,41 @@ export const SettingsPage: React.FC = () => {
   const [showCompleted, setShowCompleted] = useState(true);
   const [spaceConflictRule, setSpaceConflictRule] = useState<'WARNING' | 'BLOCKING'>('WARNING');
   const [jurorConflictRule, setJurorConflictRule] = useState<'WARNING' | 'BLOCKING'>('WARNING');
+  const [agendaHours, setAgendaHours] = useState(readAgendaHours);
+  const [hoursError, setHoursError] = useState('');
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
+  useEffect(() => {
+    let active = true;
+    getAgendaHours().then((hours) => active && setAgendaHours(hours)).catch((error) => active && setHoursError(error.message));
+    return () => { active = false; };
+  }, []);
+
+  const handleSave = async () => {
+    if (!isValidAgendaHours(agendaHours)) {
+      setHoursError('Usa un rango entre 06:00 y 23:00. La hora de fin debe ser posterior al inicio.');
+      setSaved(false);
+      return;
+    }
+    setHoursError('');
+    try {
+      await saveAgendaHours(agendaHours);
+    } catch (error) {
+      setHoursError(error instanceof Error ? error.message : 'No se pudo guardar el horario global.');
+      return;
+    }
+    const existing = JSON.parse(localStorage.getItem('epg_system_settings') || '{}');
     localStorage.setItem(
       'epg_system_settings',
       JSON.stringify({
+        ...existing,
         duration,
         showJurors,
         showCompleted,
         spaceConflictRule,
         jurorConflictRule,
+        agendaStartTime: agendaHours.start,
+        agendaEndTime: agendaHours.end,
       })
     );
     setSaved(true);
@@ -65,6 +90,30 @@ export const SettingsPage: React.FC = () => {
                 Calcula automáticamente la hora de fin a partir de la hora de inicio (actualmente 2 horas).
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-xs">
+          <CardHeader className="pb-3 border-b border-slate-100">
+            <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-unap-navy" />
+              <span>Horario global de atención</span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Define las horas visibles en las agendas y en la planificación de aulas. Se aplica a todos los usuarios.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 pt-5 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Desde</Label>
+              <Input type="time" min="06:00" max="22:59" value={agendaHours.start} onChange={(event) => setAgendaHours((current) => ({ ...current, start: event.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Hasta</Label>
+              <Input type="time" min="06:01" max="23:00" value={agendaHours.end} onChange={(event) => setAgendaHours((current) => ({ ...current, end: event.target.value }))} />
+            </div>
+            <p className="text-[11px] text-slate-500 sm:col-span-2">Predeterminado: 07:00–14:00. Se permiten horarios de mañana, tarde o noche; no se permiten rangos de madrugada (antes de las 06:00).</p>
+            {hoursError && <p role="alert" className="text-xs font-medium text-rose-700 sm:col-span-2">{hoursError}</p>}
           </CardContent>
         </Card>
 
