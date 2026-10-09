@@ -850,7 +850,7 @@ export const PublicAgendaPage: React.FC = () => {
           /* ========================================================= */
           <div className="space-y-6">
             {/* Week Day Selector Strip */}
-            <div className="bg-white border border-slate-200/90 p-2 sm:p-2.5 rounded-2xl shadow-sm flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            <div className="bg-white border border-slate-200/90 p-2 sm:p-2.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               {weekDaysForDailyView.map((day) => {
                 const dayKey = format(day, 'yyyy-MM-dd');
                 const isSelected = isSameDay(day, selectedDay);
@@ -863,7 +863,7 @@ export const PublicAgendaPage: React.FC = () => {
                     onClick={() => setSelectedDay(day)}
                     className={`flex-1 min-w-[56px] py-2 px-2 text-center rounded-xl transition-all ${
                       isSelected
-                        ? 'bg-[#091E3A] text-white shadow-sm'
+                        ? 'bg-[#091E3A] text-white'
                         : isCurrent
                         ? 'bg-amber-50 text-slate-900 border border-amber-300'
                         : 'bg-transparent text-slate-700 hover:bg-slate-100'
@@ -886,7 +886,7 @@ export const PublicAgendaPage: React.FC = () => {
             </div>
 
             {/* Selected Day Maximalist Hero Header */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-sm">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 {/* Maximalist Date Elements */}
                 <div className="flex items-baseline sm:items-center gap-4">

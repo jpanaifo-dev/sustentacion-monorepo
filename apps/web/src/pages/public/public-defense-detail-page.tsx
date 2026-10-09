@@ -377,7 +377,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Tesista(s), Asesoría y Sede física (lg:col-span-4) */}
           <div className="space-y-6 lg:col-span-4">
-            {/* Card: Tesista(s) / Candidato(s) al Grado */}
+            {/* Card: Sustentante(s) / Candidato(s) al Grado */}
             <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-5">
               <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
                 <div className="flex items-center gap-2.5">
@@ -388,7 +388,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
                     <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
                       Candidato(s) al Grado
                     </h2>
-                    <p className="text-[11px] text-slate-500">Tesista(s) postulante(s)</p>
+                    <p className="text-[11px] text-slate-500">Sustentante(s) postulante(s)</p>
                   </div>
                 </div>
                 <span className="text-[11px] font-mono font-bold text-stone-600 bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-xs">
@@ -397,7 +397,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
               </div>
 
               {students.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-2">No se encontraron tesistas registrados.</p>
+                <p className="text-xs text-slate-500 italic py-2">No se encontraron sustentantes registrados.</p>
               ) : (
                 <div className="space-y-4">
                   {students.map((s) => (
@@ -412,7 +412,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
                             {s.person.first_name} {s.person.last_name}
                           </h3>
                           <span className="inline-block mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0D6E6E] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-xs">
-                            Tesista Titular
+                            Sustentante Titular
                           </span>
                         </div>
                       </div>
@@ -644,7 +644,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
                 <div className="p-3.5 bg-[#FAF8F5] border border-stone-200/80 rounded-sm space-y-1.5">
                   <div className="font-bold text-[#091E3A] flex items-center gap-2">
                     <span className="h-5 w-5 rounded-full bg-[#091E3A] text-white text-[10px] inline-flex items-center justify-center font-mono">2</span>
-                    <span>Exposición del Tesista</span>
+                    <span>Exposición del Sustentante</span>
                   </div>
                   <p className="text-slate-600 leading-relaxed text-[11px]">
                     Presentación de objetivos, hipótesis, marco metodológico, resultados y conclusiones (30 a 45 min).
