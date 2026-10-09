@@ -201,7 +201,8 @@ app.post('/api/auth/login', async (request, reply) => {
   const user = result.rows[0];
   if (!user || !user.is_active || !user.password_hash || !(await bcrypt.compare(body.password, user.password_hash))) return reply.code(401).send({ error: 'Credenciales inválidas' });
   const token = await app.jwt.sign({ sub: user.id, email: user.email });
-  reply.setCookie('epg_session', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 8 });
+  const isProduction = process.env.NODE_ENV === 'production';
+  reply.setCookie('epg_session', token, { httpOnly: true, sameSite: isProduction ? 'none' : 'lax', secure: isProduction, path: '/', maxAge: 60 * 60 * 8 });
   const { password_hash: _passwordHash, ...safeUser } = user;
   return { user: safeUser, roles: ['SUPER_ADMIN'], permissions: ['*'] };
 });
