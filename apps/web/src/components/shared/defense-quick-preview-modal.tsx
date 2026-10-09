@@ -248,10 +248,10 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
 
           {/* Candidato al Grado */}
           <div className="border border-slate-200 bg-white rounded-sm p-3.5 space-y-2">
-            <div className="text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">Candidato(s) al Grado (Tesista)</div>
+            <div className="text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">Candidato(s) al Grado (Sustentante)</div>
 
             {students.length === 0 ? (
-              <p className="text-xs text-slate-500">Tesista por confirmar en el expediente.</p>
+              <p className="text-xs text-slate-500">Sustentante por confirmar en el expediente.</p>
             ) : (
               <div className="space-y-1.5">
                 {students.map((s) => (
