@@ -38,14 +38,15 @@ docker compose down -v
 2. Copiar el contenido del `.env` de la raíz en **Environment** de Dokploy.
    El archivo local contiene secretos generados y está ignorado por Git;
    `.env.prod.example` sirve como plantilla para otras instalaciones.
-   Sustituir `agenda.example.com` y `api-agenda.example.com` por los dominios reales.
+   Configurar `VITE_API_URL=https://coniiap.online` y
+   `WEB_ORIGIN=https://sustentacion-monorepo.vercel.app`.
 3. En **Domains**, asignar el dominio web al servicio `web`, puerto `80`, y
    el dominio de la API al servicio `api`, puerto `8787`. En ambos casos usar
    ruta `/` y HTTPS. Dokploy genera las etiquetas de Traefik.
-4. Usar subdominios del mismo dominio base (por ejemplo, `agenda.midominio.com`
-   y `api-agenda.midominio.com`): la sesión actual usa cookies `SameSite=Lax`.
-   `WEB_ORIGIN` debe coincidir con el origen HTTPS de la web, sin barra final;
-   `VITE_API_URL` debe ser la URL HTTPS de la API, sin añadir `/api` ni barra final.
+4. `WEB_ORIGIN` debe coincidir exactamente con el origen HTTPS de la web, sin
+   barra final. `VITE_API_URL` debe ser la URL HTTPS de la API, sin añadir
+   `/api` ni barra final. Como la web y la API están en dominios distintos, la
+   API usa cookies de sesión `SameSite=None; Secure` en producción.
 5. Desplegar. Al cambiar `VITE_API_URL`, reconstruir la web: Vite incorpora esa
    variable durante la compilación. No incluir contraseñas en variables `VITE_*`.
 
