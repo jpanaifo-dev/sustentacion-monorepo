@@ -4,6 +4,7 @@ dist/
 *.env
 .env.*
 !.env.example
+!.env.prod.example
 *.log
 .session-cookies.txt
 .session-cookies*

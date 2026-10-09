@@ -1,0 +1,81 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-epg}
+      POSTGRES_USER: ${POSTGRES_USER:-epg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en Dokploy}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/api/db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - backend
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      DATABASE_URL: postgres://${POSTGRES_USER:-epg}:${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en Dokploy}@db:5432/${POSTGRES_DB:-epg}
+      JWT_SECRET: ${JWT_SECRET:?Configura JWT_SECRET en Dokploy}
+      WEB_ORIGIN: ${WEB_ORIGIN:?Configura el origen HTTPS de la web en Dokploy}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-epg-media}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8787"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - backend
+      - dokploy-network
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:?Configura la URL HTTPS de la API en Dokploy}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - dokploy-network
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    internal: true
+  dokploy-network:
+    external: true
+
