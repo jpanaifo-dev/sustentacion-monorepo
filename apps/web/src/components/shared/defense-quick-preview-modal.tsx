@@ -92,18 +92,51 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl rounded-sm">
+      <DialogContent className="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl rounded-2xl">
         {/* Modal Top Institutional Header */}
         <div className="shrink-0 bg-white text-slate-900 p-5 sm:p-6 lg:px-8 border-b border-slate-200">
-          <div className="flex flex-wrap items-center gap-2 mb-2.5">
-            <span className="font-mono text-xs font-semibold bg-amber-100 text-slate-900 border border-amber-300 px-2 py-0.5 rounded-sm">
-              {defense.code}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2.5">
+            <span className="font-mono text-xs font-semibold text-slate-400">
+              #{defense.code}
             </span>
-            <StatusBadge status={defense.status} />
-            <span className="text-xs text-slate-500 font-medium">
+            <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+              defense.status === 'CONFIRMED'
+                ? 'text-emerald-700'
+                : defense.status === 'RESCHEDULED'
+                ? 'text-blue-700'
+                : defense.status === 'COMPLETED'
+                ? 'text-purple-700'
+                : defense.status === 'CANCELLED'
+                ? 'text-rose-700'
+                : 'text-amber-700'
+            }`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                defense.status === 'CONFIRMED'
+                  ? 'bg-emerald-500'
+                  : defense.status === 'RESCHEDULED'
+                  ? 'bg-blue-500'
+                  : defense.status === 'COMPLETED'
+                  ? 'bg-purple-500'
+                  : defense.status === 'CANCELLED'
+                  ? 'bg-rose-500'
+                  : 'bg-amber-500'
+              }`} />
+              {defense.status === 'CONFIRMED'
+                ? 'Confirmada'
+                : defense.status === 'RESCHEDULED'
+                ? 'Reprogramada'
+                : defense.status === 'COMPLETED'
+                ? 'Completada'
+                : defense.status === 'CANCELLED'
+                ? 'Cancelada'
+                : 'Borrador'}
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#091E3A]">
               {defense.unit?.acronym || defense.unit?.name}
             </span>
-            <span className="text-[10px] font-mono uppercase px-2 py-0.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-sm">{getModalityLabel(defense.modality)}</span>
+            <span className="text-xs text-slate-500">
+              {getModalityLabel(defense.modality)}
+            </span>
           </div>
 
           <DialogTitle className="text-lg sm:text-2xl font-semibold text-slate-900 leading-snug tracking-tight">

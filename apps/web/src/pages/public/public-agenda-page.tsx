@@ -1,13 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { defensesService } from '../../services/defenses.service';
 import { unitsService } from '../../services/units.service';
 import { holidaysService } from '../../services/holidays.service';
-import { DefenseWithRelations } from '../../types';
-import { StatusBadge } from '../../components/shared/status-badge';
+import { DefenseWithRelations, DefenseParticipantWithPerson } from '../../types';
 import { DefenseQuickPreviewModal } from '../../components/shared/defense-quick-preview-modal';
-import { formatDate, formatTime, getModalityLabel, normalizeDateOnly } from '../../lib/utils';
+import { formatTime, getModalityLabel, normalizeDateOnly } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import {
@@ -24,9 +22,8 @@ import {
   ChevronRight,
   GraduationCap,
   CalendarCheck,
-  Building,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
 } from 'lucide-react';
 import {
   format,
@@ -53,17 +50,224 @@ function parseDateParts(dateStr: string) {
     const date = new Date(year, month - 1, day);
     const dayStr = String(day).padStart(2, '0');
     const monthStr = date.toLocaleString('es-PE', { month: 'short' }).toUpperCase().replace('.', '');
+    const monthFull = date.toLocaleString('es-PE', { month: 'long' });
     const weekdayStr = date.toLocaleString('es-PE', { weekday: 'short' }).toUpperCase().replace('.', '');
-    return { dayStr, monthStr, weekdayStr, year };
+    const weekdayFull = date.toLocaleString('es-PE', { weekday: 'long' });
+    return { dayStr, monthStr, monthFull, weekdayStr, weekdayFull, year, date };
   } catch {
-    return { dayStr: '--', monthStr: '---', weekdayStr: '---', year: '' };
+    return { dayStr: '--', monthStr: '---', monthFull: '---', weekdayStr: '---', weekdayFull: '---', year: '', date: new Date() };
   }
 }
+
+function getStatusConfig(status?: string | null) {
+  switch (status) {
+    case 'CONFIRMED':
+      return {
+        label: 'Confirmada',
+        colorText: 'text-emerald-700',
+        dotColor: 'bg-emerald-500',
+        borderColor: 'border-l-emerald-500',
+        barColor: 'bg-emerald-500',
+      };
+    case 'RESCHEDULED':
+      return {
+        label: 'Reprogramada',
+        colorText: 'text-blue-700',
+        dotColor: 'bg-blue-500',
+        borderColor: 'border-l-blue-500',
+        barColor: 'bg-blue-500',
+      };
+    case 'COMPLETED':
+      return {
+        label: 'Completada',
+        colorText: 'text-purple-700',
+        dotColor: 'bg-purple-500',
+        borderColor: 'border-l-purple-500',
+        barColor: 'bg-purple-500',
+      };
+    case 'CANCELLED':
+      return {
+        label: 'Cancelada',
+        colorText: 'text-rose-700',
+        dotColor: 'bg-rose-500',
+        borderColor: 'border-l-rose-500',
+        barColor: 'bg-rose-500',
+      };
+    case 'DRAFT':
+    default:
+      return {
+        label: 'Borrador',
+        colorText: 'text-amber-700',
+        dotColor: 'bg-amber-500',
+        borderColor: 'border-l-amber-500',
+        barColor: 'bg-amber-500',
+      };
+  }
+}
+
+// Stacked avatars for participants without badges
+const ParticipantAvatarStack: React.FC<{ participants?: DefenseParticipantWithPerson[]; max?: number }> = ({
+  participants = [],
+  max = 3,
+}) => {
+  if (!participants.length) return null;
+  const visible = participants.slice(0, max);
+  const remaining = participants.length - max;
+
+  return (
+    <div className="flex items-center -space-x-2 shrink-0">
+      {visible.map((p, idx) => {
+        const initials = `${p.person?.first_name?.[0] || ''}${p.person?.last_name?.[0] || ''}`.toUpperCase();
+        return (
+          <div
+            key={p.id || idx}
+            className="relative h-7 w-7 rounded-full border-2 border-white bg-[#091E3A] text-[10px] font-semibold text-white flex items-center justify-center overflow-hidden shadow-sm"
+            title={`${p.person?.first_name} ${p.person?.last_name} (${p.participant_type})`}
+          >
+            {p.person?.photo_url ? (
+              <img src={p.person.photo_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span>{initials || '—'}</span>
+            )}
+          </div>
+        );
+      })}
+      {remaining > 0 && (
+        <div className="relative h-7 w-7 rounded-full border-2 border-white bg-slate-200 text-[10px] font-bold text-slate-600 flex items-center justify-center shadow-sm">
+          +{remaining}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Minimalist Card Component (No badges, purely normal text, vertical accent line)
+interface DefenseMinimalCardProps {
+  defense: DefenseWithRelations;
+  onClick: () => void;
+  showDateInline?: boolean;
+}
+
+const DefenseMinimalCard: React.FC<DefenseMinimalCardProps> = ({
+  defense,
+  onClick,
+  showDateInline = false,
+}) => {
+  const statusConfig = getStatusConfig(defense.status);
+  const students = (defense.participants || []).filter((p) => p.participant_type === 'STUDENT');
+  const jurors = (defense.participants || []).filter((p) => p.participant_type === 'JUROR');
+  const advisor = defense.participants?.find((p) => p.participant_type === 'ADVISOR');
+
+  return (
+    <article
+      onClick={onClick}
+      className="group relative rounded-2xl bg-white p-4 sm:p-5 lg:p-6 transition-all duration-200 hover:bg-slate-100/70 cursor-pointer"
+    >
+      {/* Top Header Row: Time, Category/Unit, Status, Code, Avatars */}
+      <div className="flex items-start justify-between gap-3 mb-2.5">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {/* Time */}
+          <div className="flex items-baseline gap-1 text-slate-900">
+            <span className="text-sm sm:text-base lg:text-lg font-bold font-mono">
+              {formatTime(defense.start_time).replace(/:\d\d /, ' ')}
+            </span>
+            <span className="text-xs sm:text-sm text-slate-400 font-normal font-mono">
+              - {formatTime(defense.estimated_end_time).replace(/:\d\d /, ' ')}
+            </span>
+            <span className="text-xs text-slate-400 font-mono hidden sm:inline">
+              ({defense.estimated_duration_minutes || 120} min)
+            </span>
+          </div>
+
+          {/* Unit Category (normal text, styled) */}
+          <span className="text-xs lg:text-sm font-semibold uppercase tracking-wider text-[#091E3A]">
+            {defense.unit?.acronym || defense.unit?.name}
+          </span>
+
+          {/* Status (normal text with colored dot, NO BADGE, NO COLORED BORDER) */}
+          <span className={`inline-flex items-center gap-1.5 text-xs lg:text-sm font-medium ${statusConfig.colorText}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${statusConfig.dotColor}`} />
+            {statusConfig.label}
+          </span>
+
+          {/* Monospace Code (normal text, NO BADGE) */}
+          <span className="text-xs font-mono text-slate-400 font-medium">
+            #{defense.code}
+          </span>
+        </div>
+
+        {/* Avatars on top right */}
+        <ParticipantAvatarStack participants={defense.participants} max={4} />
+      </div>
+
+      {/* Thesis Title: Regular font weight by default, bold only on hover */}
+      <h3 className="text-base sm:text-lg lg:text-xl font-normal text-slate-800 leading-snug group-hover:font-semibold group-hover:text-[#091E3A] transition-all mb-3">
+        {defense.title}
+      </h3>
+
+      {/* Bottom Info Row: Sustentantes, Advisor, Jurors, Modality / Venue */}
+      <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-4 pt-3 border-t border-slate-100 text-xs sm:text-sm text-slate-600">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+          {/* Sustentantes claramente visibles */}
+          {students.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <GraduationCap className="h-4 w-4 text-[#091E3A] shrink-0" />
+              <span className="text-slate-500 font-medium">
+                {students.length > 1 ? 'Sustentantes:' : 'Sustentante:'}
+              </span>
+              <span className="font-semibold text-slate-900">
+                {students.map((s) => `${s.person.first_name} ${s.person.last_name}`).join(', ')}
+              </span>
+            </div>
+          )}
+
+          {/* Advisor */}
+          {advisor && (
+            <div className="hidden md:flex items-center gap-1 text-slate-500">
+              <span>Asesor:</span>
+              <span className="font-medium text-slate-800">
+                {advisor.person.first_name} {advisor.person.last_name}
+              </span>
+            </div>
+          )}
+
+          {/* Jurors count */}
+          {jurors.length > 0 && (
+            <div className="flex items-center gap-1 text-slate-500">
+              <Users className="h-4 w-4 text-slate-400 shrink-0" />
+              <span>{jurors.length} jurados</span>
+            </div>
+          )}
+
+          {/* Venue / Modality */}
+          <div className="flex items-center gap-1.5 text-slate-500">
+            {defense.modality === 'VIRTUAL' ? (
+              <>
+                <Video className="h-4 w-4 text-blue-500 shrink-0" />
+                <span className="font-medium">Virtual</span>
+              </>
+            ) : (
+              <>
+                <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                <span className="truncate max-w-[220px] font-medium">{defense.space?.name || getModalityLabel(defense.modality)}</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Action Link */}
+        <div className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#091E3A] group-hover:translate-x-0.5 transition-transform shrink-0">
+          <span>Ver detalle</span>
+          <ArrowRight className="h-4 w-4" />
+        </div>
+      </div>
+    </article>
+  );
+};
 
 type ViewMode = 'month' | 'day' | 'list';
 
 export const PublicAgendaPage: React.FC = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
@@ -132,6 +336,35 @@ export const PublicAgendaPage: React.FC = () => {
     return map;
   }, [filteredDefenses]);
 
+  // Group defenses chronologically by date for the Agenda (list) view
+  const groupedDefensesByDate = useMemo(() => {
+    const groups: { dateKey: string; date: Date; defenses: DefenseWithRelations[] }[] = [];
+    const map = new Map<string, DefenseWithRelations[]>();
+
+    filteredDefenses.forEach((d) => {
+      const key = normalizeDateOnly(d.scheduled_date);
+      if (!key) return;
+      const list = map.get(key) || [];
+      list.push(d);
+      map.set(key, list);
+    });
+
+    const sortedKeys = Array.from(map.keys()).sort();
+
+    sortedKeys.forEach((key) => {
+      const [year, month, day] = key.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      const dayDefenses = (map.get(key) || []).sort((a, b) => a.start_time.localeCompare(b.start_time));
+      groups.push({
+        dateKey: key,
+        date,
+        defenses: dayDefenses,
+      });
+    });
+
+    return groups;
+  }, [filteredDefenses]);
+
   // Defenses of the same day as the currently previewed defense
   const sameDayDefensesForPreview = useMemo(() => {
     if (!previewDefense) return [];
@@ -139,15 +372,6 @@ export const PublicAgendaPage: React.FC = () => {
       .slice()
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
   }, [previewDefense, defensesByDate]);
-
-  // Statistics counters
-  const stats = useMemo(() => {
-    const total = defenses.length;
-    const confirmed = defenses.filter((d) => d.status === 'CONFIRMED').length;
-    const virtual = defenses.filter((d) => d.modality === 'VIRTUAL' || d.modality === 'HYBRID').length;
-    const presencial = defenses.filter((d) => d.modality === 'PRESENTIAL').length;
-    return { total, confirmed, virtual, presencial };
-  }, [defenses]);
 
   // Navigation handlers
   const handlePrev = () => {
@@ -210,347 +434,423 @@ export const PublicAgendaPage: React.FC = () => {
   }, [selectedDay]);
 
   return (
-    <div className="space-y-6 w-full pb-12 font-sans">
-      {/* Minimal institutional banner: only on the public agenda */}
+    <div className="space-y-6 w-full pb-16 font-sans">
+      {/* Institutional Responsive Hero Banner */}
       <section
-        className="w-full min-h-[300px] sm:min-h-[380px] lg:min-h-[420px] bg-[#091E3A] border-y border-white/10 text-white px-5 py-10 sm:px-8 relative overflow-hidden shadow-sm flex items-center"
-        style={{ backgroundImage: `linear-gradient(90deg, rgba(9,30,58,0.98) 0%, rgba(9,30,58,0.94) 48%, rgba(9,30,58,0.72) 100%), url(${heroImage})`, backgroundPosition: 'center, right 12% center', backgroundRepeat: 'no-repeat', backgroundSize: 'cover, 360px' }}
+        className="w-full bg-[#091E3A] border-b border-white/10 text-white px-4 py-8 sm:py-12 lg:py-14 relative overflow-hidden shadow-sm"
+        style={{
+          backgroundImage: `linear-gradient(90deg, rgba(9,30,58,0.98) 0%, rgba(9,30,58,0.94) 55%, rgba(9,30,58,0.75) 100%), url(${heroImage})`,
+          backgroundPosition: 'center, right 10% center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover, 340px',
+        }}
       >
-        <div className="container mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <div>
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight">Agenda de sustentaciones</h1>
-            <p className="text-sm sm:text-base text-slate-200 mt-5 max-w-2xl leading-relaxed">Consulta las fechas, horarios, modalidades y espacios de las sustentaciones de tesis y defensas de grado programadas por la Escuela de Postgrado de la Universidad Nacional de la Amazonía Peruana.</p>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-amber-400 mb-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              Escuela de Postgrado UNAP
+            </div>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-white">
+              Agenda de sustentaciones
+            </h1>
+            <p className="text-xs sm:text-sm md:text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
+              Consulta las fechas, horarios, modalidades y espacios de las sustentaciones de tesis y defensas de grado programadas por la Escuela de Postgrado.
+            </p>
           </div>
         </div>
       </section>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-      {/* Control & Filter Strip */}
-      <section className="bg-white border border-slate-200 p-4 sm:p-4.5 rounded-sm shadow-sm">
-        <div className="flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
-          {/* Search, Unit, and Modality filters */}
-          <div className="flex flex-1 flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="h-4 w-4 absolute left-3 top-3 text-slate-400" />
-              <Input
-                placeholder="Buscar por tesis, código, tesista..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10 rounded-sm border border-slate-200 bg-slate-50 text-slate-900 text-xs sm:text-sm font-normal focus:border-[#091E3A] focus:bg-white"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-900 font-mono"
+        {/* Filter Strip & Responsive View Switcher */}
+        <section className="bg-white border border-slate-200/90 p-3 sm:p-4 rounded-2xl shadow-sm">
+          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+            {/* Search & Select Filters */}
+            <div className="flex flex-1 flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="h-4 w-4 absolute left-3 top-3 text-slate-400" />
+                <Input
+                  placeholder="Buscar por sustentación, código, sustentante..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-xs sm:text-sm focus:border-[#091E3A] focus:bg-white"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-900"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Unit Selector */}
+              <div className="w-full sm:w-64">
+                <select
+                  value={selectedUnit}
+                  onChange={(e) => setSelectedUnit(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs sm:text-sm font-normal text-slate-900 focus:outline-none focus:border-[#091E3A] focus:bg-white cursor-pointer"
                 >
-                  ✕
-                </button>
+                  <option value="ALL">Todas las unidades</option>
+                  {units.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.acronym ? `[${u.acronym}] ${u.name}` : u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Modality Selector */}
+              <div className="w-full sm:w-44">
+                <select
+                  value={selectedModality}
+                  onChange={(e) => setSelectedModality(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs sm:text-sm font-normal text-slate-900 focus:outline-none focus:border-[#091E3A] focus:bg-white cursor-pointer"
+                >
+                  <option value="ALL">Modalidad: Todas</option>
+                  <option value="PRESENTIAL">Presencial</option>
+                  <option value="VIRTUAL">Virtual</option>
+                  <option value="HYBRID">Híbrida</option>
+                </select>
+              </div>
+
+              {(search || selectedUnit !== 'ALL' || selectedModality !== 'ALL') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="h-10 px-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 text-xs"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                  Limpiar
+                </Button>
               )}
             </div>
 
-            {/* Unit Selector */}
-            <div className="sm:w-72">
-              <select
-                value={selectedUnit}
-                onChange={(e) => setSelectedUnit(e.target.value)}
-                className="w-full h-10 rounded-sm border border-slate-200 bg-slate-50 px-3 text-xs sm:text-sm font-normal text-slate-900 focus:outline-none focus:border-[#091E3A] focus:bg-white cursor-pointer"
+            {/* View Mode Switcher (Full width on mobile, sleek segmented control) */}
+            <div className="grid grid-cols-3 sm:flex items-center gap-1 border border-slate-200 p-1 bg-slate-100 rounded-xl shrink-0">
+              <button
+                onClick={() => setViewMode('month')}
+                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all rounded-lg ${
+                  viewMode === 'month'
+                    ? 'bg-[#091E3A] text-amber-400 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <option value="ALL">Todas las unidades de posgrado</option>
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.acronym ? `[${u.acronym}] ${u.name}` : u.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Modality Selector */}
-            <div className="sm:w-44">
-              <select
-                value={selectedModality}
-                onChange={(e) => setSelectedModality(e.target.value)}
-                className="w-full h-10 rounded-sm border border-slate-200 bg-slate-50 px-3 text-xs sm:text-sm font-normal text-slate-900 focus:outline-none focus:border-[#091E3A] focus:bg-white cursor-pointer"
+                <CalendarDays className="h-3.5 w-3.5" />
+                <span>Mes</span>
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('day');
+                  setSelectedDay(currentDate);
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all rounded-lg ${
+                  viewMode === 'day'
+                    ? 'bg-[#091E3A] text-amber-400 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <option value="ALL">Modalidad: Todas</option>
-                <option value="PRESENTIAL">Presencial</option>
-                <option value="VIRTUAL">Virtual</option>
-                <option value="HYBRID">Híbrida</option>
-              </select>
+                <Clock className="h-3.5 w-3.5" />
+                <span>Diario</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all rounded-lg ${
+                  viewMode === 'list'
+                    ? 'bg-[#091E3A] text-amber-400 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <List className="h-3.5 w-3.5" />
+                <span>Agenda ({filteredDefenses.length})</span>
+              </button>
             </div>
+          </div>
+        </section>
 
-            {(search || selectedUnit !== 'ALL' || selectedModality !== 'ALL') && (
+        {/* Date Navigation & Minimalist Legend (for Month & Day views) */}
+        {viewMode !== 'list' && (
+          <section className="bg-white border border-slate-200/90 p-3 sm:p-4 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+            {/* Navigation Buttons */}
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={resetFilters}
-                className="h-10 px-3 rounded-sm border border-slate-200 text-slate-600 hover:text-slate-900 text-xs font-mono uppercase font-normal"
+                onClick={handlePrev}
+                className="h-9 w-9 p-0 rounded-lg border border-slate-200 hover:bg-[#091E3A] hover:text-white"
+                title="Anterior"
               >
-                <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                Limpiar
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-            )}
-          </div>
-
-          {/* View Mode Switcher (Mes / Diario / Agenda) */}
-          <div className="flex items-center gap-1 border border-slate-200 p-0.5 bg-slate-100 self-start sm:self-auto shrink-0 rounded-sm">
-            <button
-              onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 text-xs font-medium uppercase tracking-wider flex items-center gap-1.5 transition-colors rounded-sm ${
-                viewMode === 'month'
-                  ? 'bg-[#091E3A] text-amber-400'
-                  : 'bg-transparent text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              <CalendarDays className="h-3.5 w-3.5" />
-              <span>Mes</span>
-            </button>
-            <button
-              onClick={() => {
-                setViewMode('day');
-                setSelectedDay(currentDate);
-              }}
-              className={`px-3 py-1.5 text-xs font-medium uppercase tracking-wider flex items-center gap-1.5 transition-colors rounded-sm ${
-                viewMode === 'day'
-                  ? 'bg-[#091E3A] text-amber-400'
-                  : 'bg-transparent text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              <Clock className="h-3.5 w-3.5" />
-              <span>Diario</span>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 text-xs font-medium uppercase tracking-wider flex items-center gap-1.5 transition-colors rounded-sm ${
-                viewMode === 'list'
-                  ? 'bg-[#091E3A] text-amber-400'
-                  : 'bg-transparent text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              <List className="h-3.5 w-3.5" />
-              <span>Agenda ({filteredDefenses.length})</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Date Navigation & Calendar Legend (for Month & Day views) */}
-      {viewMode !== 'list' && (
-        <section className="bg-white border border-slate-200 p-3.5 sm:p-4 rounded-sm shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Navigation Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrev}
-              className="h-8 w-8 p-0 rounded-sm border border-slate-300 hover:bg-[#091E3A] hover:text-white"
-              title="Anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToday}
-              className="h-8 px-3 rounded-sm border border-slate-300 font-mono text-xs font-medium uppercase hover:bg-[#091E3A] hover:text-white"
-            >
-              Hoy
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNext}
-              className="h-8 w-8 p-0 rounded-sm border border-slate-300 hover:bg-[#091E3A] hover:text-white"
-              title="Siguiente"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Current Period Display in Poppins font */}
-          <div className="text-center sm:text-left">
-            <div className="text-lg sm:text-xl font-semibold text-[#091E3A] uppercase tracking-tight leading-snug">
-              {viewMode === 'month'
-                ? format(currentDate, 'MMMM yyyy', { locale: es })
-                : format(selectedDay, 'EEEE, d MMMM yyyy', { locale: es })}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToday}
+                className="h-9 px-3 rounded-lg border border-slate-200 text-xs font-semibold uppercase hover:bg-[#091E3A] hover:text-white"
+              >
+                Hoy
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNext}
+                className="h-9 w-9 p-0 rounded-lg border border-slate-200 hover:bg-[#091E3A] hover:text-white"
+                title="Siguiente"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-            <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-              {viewMode === 'month'
-                ? `Vista mensual institucional · ${filteredDefenses.length} sustentaciones programadas`
-                : `Programación diaria · ${defensesForSelectedDay.length} sustentaciones para esta jornada`}
+
+            {/* Current Period Display */}
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-bold text-[#091E3A] uppercase tracking-tight">
+                {viewMode === 'month'
+                  ? format(currentDate, 'MMMM yyyy', { locale: es })
+                  : format(selectedDay, 'EEEE, d MMMM yyyy', { locale: es })}
+              </div>
+              <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                {viewMode === 'month'
+                  ? `${filteredDefenses.length} sustentaciones programadas este periodo`
+                  : `${defensesForSelectedDay.length} sustentaciones para esta jornada`}
+              </div>
             </div>
-          </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 text-[10px] font-mono">
-            <span className="flex items-center gap-1.5 px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-950 font-medium rounded-sm">
-              <span className="h-1.5 w-1.5 bg-emerald-600 rounded-sm" /> Confirmada
-            </span>
-            <span className="flex items-center gap-1.5 px-2 py-0.5 border border-blue-600 bg-blue-50 text-blue-950 font-medium rounded-sm">
-              <span className="h-1.5 w-1.5 bg-blue-600 rounded-sm" /> Reprogramada
-            </span>
-            <span className="flex items-center gap-1.5 px-2 py-0.5 border border-purple-600 bg-purple-50 text-purple-950 font-medium rounded-sm">
-              <span className="h-1.5 w-1.5 bg-purple-600 rounded-sm" /> Completada
-            </span>
-            <span className="flex items-center gap-1.5 px-2 py-0.5 border border-amber-500 bg-amber-50 text-amber-900 font-medium rounded-sm">
-              <span className="h-1.5 w-1.5 bg-amber-500 rounded-sm" /> Feriado
-            </span>
-          </div>
-        </section>
-      )}
+            {/* Minimalist Legend: Clean text with dots, NO heavy boxed badges */}
+            <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1.5 text-xs text-slate-600">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> Confirmada
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-blue-500" /> Reprogramada
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-purple-500" /> Completada
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500" /> Feriado
+              </span>
+            </div>
+          </section>
+        )}
 
-      {/* Main Content Area */}
-      {isLoadingDefenses ? (
-        <div className="p-16 text-center bg-white border border-slate-200 rounded-sm shadow-sm">
-          <div className="text-lg font-semibold text-slate-800 uppercase tracking-tight">
-            Cargando programación institucional...
+        {/* Main Content Area */}
+        {isLoadingDefenses ? (
+          <div className="p-16 text-center bg-white border border-slate-200 rounded-2xl shadow-sm">
+            <div className="text-lg font-semibold text-slate-800">
+              Cargando programación institucional...
+            </div>
+            <p className="text-xs text-slate-500 mt-2 font-normal">
+              Sincronizando con base de datos de la Escuela de Postgrado UNAP
+            </p>
           </div>
-          <p className="text-xs text-slate-500 mt-2 font-normal">
-            Sincronizando con base de datos de la Escuela de Postgrado UNAP
-          </p>
-        </div>
-      ) : viewMode === 'month' ? (
-        /* 1. MONTH VIEW */
-        <div className="overflow-hidden rounded-xl border border-[#eadfc8] bg-[#fbf6e8] shadow-sm">
-          {/* Day of Week Headers */}
-          <div className="grid grid-cols-7 border-b border-[#eadfc8] bg-[#f7efdc] text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 py-5 min-h-[76px] items-center">
-            <div>Lun</div>
-            <div>Mar</div>
-            <div>Mié</div>
-            <div>Jue</div>
-            <div>Vie</div>
-            <div className="text-[#a66d35]">Sáb</div>
-            <div className="text-[#a66d35]">Dom</div>
-          </div>
+        ) : viewMode === 'month' ? (
+          /* ========================================================= */
+          /* 1. MONTH VIEW (Responsive with Compact Mode on Mobile)    */
+          /* ========================================================= */
+          <div className="space-y-6">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {/* Day of Week Headers */}
+              <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 py-3">
+                <div>Lun</div>
+                <div>Mar</div>
+                <div>Mié</div>
+                <div>Jue</div>
+                <div>Vie</div>
+                <div className="text-rose-600">Sáb</div>
+                <div className="text-rose-600">Dom</div>
+              </div>
 
-          {/* Month Days 7x5 or 7x6 Grid */}
-          <div className="grid grid-cols-7 auto-rows-[minmax(205px,1fr)] divide-x divide-y divide-[#eadfc8] border-b border-[#eadfc8]">
-            {monthDays.map((day) => {
-              const dateKey = format(day, 'yyyy-MM-dd');
-              const dayDefenses = defensesByDate.get(dateKey) || [];
-              const holiday = holidaysByDate.get(dateKey);
-              const isCurrMonth = isSameMonth(day, currentDate);
-              const isCurrentDay = isToday(day);
-              const isSelected = isSameDay(day, selectedDay);
+              {/* Month Days 7x5 or 7x6 Grid */}
+              <div className="grid grid-cols-7 auto-rows-[minmax(70px,1fr)] sm:auto-rows-[minmax(160px,1fr)] lg:auto-rows-[minmax(220px,1fr)] divide-x divide-y divide-slate-100">
+                {monthDays.map((day) => {
+                  const dateKey = format(day, 'yyyy-MM-dd');
+                  const dayDefenses = defensesByDate.get(dateKey) || [];
+                  const holiday = holidaysByDate.get(dateKey);
+                  const isCurrMonth = isSameMonth(day, currentDate);
+                  const isCurrentDay = isToday(day);
+                  const isSelected = isSameDay(day, selectedDay);
 
-              return (
-                <div
-                  key={dateKey}
-                  onClick={() => {
-                    setSelectedDay(day);
-                  }}
-                    className={`min-h-[205px] sm:min-h-[225px] p-3 sm:p-4 transition-colors flex flex-col justify-between cursor-pointer ${
-                    !isCurrMonth ? 'bg-[#f5eddd]/70 text-slate-400' : holiday ? 'bg-[#fff4d6] text-slate-900' : 'bg-[#fffdf7] text-slate-900'
-                  } ${isCurrentDay ? 'bg-[#fff2c7] ring-2 ring-inset ring-[#c59b27]' : ''} ${
-                    isSelected ? 'ring-2 ring-inset ring-[#091E3A]' : ''
-                  } hover:bg-[#f8f0df]`}
-                >
-                  {/* Day cell top bar */}
-                  <div className="flex items-center justify-between mb-1">
-                    <span
-                      className={`text-2xl sm:text-3xl font-semibold leading-none tracking-tight ${
-                        isCurrentDay ? 'text-[#091E3A] font-semibold' : isCurrMonth ? 'text-slate-900' : 'text-slate-400'
-                      }`}
+                  return (
+                    <div
+                      key={dateKey}
+                      onClick={() => {
+                        setSelectedDay(day);
+                      }}
+                      className={`min-h-[70px] sm:min-h-[160px] lg:min-h-[225px] p-2 sm:p-2.5 lg:p-3 transition-colors flex flex-col justify-between cursor-pointer ${
+                        !isCurrMonth
+                          ? 'bg-slate-50/60 text-slate-400'
+                          : holiday
+                          ? 'bg-amber-50/50 text-slate-900'
+                          : 'bg-white text-slate-900'
+                      } ${isCurrentDay ? 'bg-amber-50/80 ring-2 ring-inset ring-amber-400' : ''} ${
+                        isSelected ? 'ring-2 ring-inset ring-[#091E3A]' : ''
+                      } hover:bg-slate-50`}
                     >
-                      {format(day, 'd')}
-                    </span>
-
-                    {isCurrentDay && (
-                      <span className="font-mono text-[9px] font-medium bg-[#C59B27] text-slate-950 px-1 py-0.2 rounded-sm uppercase">
-                        Hoy
-                      </span>
-                    )}
-
-                    {!isCurrentDay && dayDefenses.length > 0 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenPreview(dayDefenses[0]);
-                        }}
-                        className="font-mono text-[9px] font-semibold bg-[#091E3A] text-amber-300 px-2 py-1 rounded-full hover:bg-[#061528] transition-colors"
-                        title={`${dayDefenses.length} sustentación(es) - Clic para ver vista previa`}
-                      >
-                        {dayDefenses.length}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Day Events list (limited to 3) */}
-                  <div className="space-y-2 my-2">
-                    {holiday && (
-                      <div
-                        className="px-1.5 py-1 text-[10px] sm:text-[11px] font-medium truncate rounded-sm border border-amber-300 bg-amber-100 text-amber-950"
-                        title={holiday.name}
-                      >
-                        Feriado: {holiday.name}
-                      </div>
-                    )}
-                    {dayDefenses.slice(0, 3).map((d) => {
-                      const student = d.participants?.find((p) => p.participant_type === 'STUDENT');
-                      const statusCard =
-                        d.status === 'CONFIRMED'
-                          ? 'border-l-emerald-500 bg-emerald-50/80 text-emerald-950'
-                          : d.status === 'RESCHEDULED'
-                          ? 'border-l-blue-500 bg-blue-50/80 text-blue-950'
-                          : 'border-l-purple-500 bg-purple-50/80 text-purple-950';
-
-                      return (
-                        <div
-                          key={d.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenPreview(d);
-                          }}
-                          className={`px-2 py-2 text-[10px] sm:text-[11px] font-normal rounded-md border border-slate-200 border-l-4 cursor-pointer hover:-translate-y-0.5 hover:shadow-sm transition-all ${statusCard}`}
-                          title={`${d.code}: ${d.title} (Clic para vista previa)`}
+                      {/* Cell Header: Day number + dot indicator */}
+                      <div className="flex items-center justify-between mb-1">
+                        <span
+                          className={`text-sm sm:text-lg lg:text-2xl font-bold leading-none ${
+                            isCurrentDay
+                              ? 'text-[#091E3A] font-extrabold'
+                              : isCurrMonth
+                              ? 'text-slate-900'
+                              : 'text-slate-300'
+                          }`}
                         >
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-mono text-[9px] font-semibold opacity-80 shrink-0">{formatTime(d.start_time).replace(/:\d\d /, ' ')}</span>
-                            <span className="text-[8px] uppercase tracking-wide opacity-70">{getModalityLabel(d.modality)}</span>
+                          {format(day, 'd')}
+                        </span>
+
+                        {isCurrentDay && (
+                          <span className="hidden sm:inline font-mono text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded uppercase">
+                            Hoy
+                          </span>
+                        )}
+
+                        {dayDefenses.length > 0 && (
+                          <span className="text-[10px] font-bold text-white bg-[#091E3A] h-5 w-5 rounded-full flex items-center justify-center shrink-0">
+                            {dayDefenses.length}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* On Mobile: simple dot indicators */}
+                      <div className="flex sm:hidden items-center justify-center gap-1 mt-1">
+                        {holiday && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+                        {dayDefenses.slice(0, 3).map((d) => {
+                          const conf = getStatusConfig(d.status);
+                          return (
+                            <span key={d.id} className={`h-1.5 w-1.5 rounded-full ${conf.dotColor}`} />
+                          );
+                        })}
+                      </div>
+
+                      {/* On Desktop/Tablet: Rich Cards inside Cell showing Thesis Title & Sustentantes */}
+                      <div className="hidden sm:block space-y-1.5 lg:space-y-2 my-1">
+                        {holiday && (
+                          <div
+                            className="px-2 py-1 text-[10px] sm:text-[11px] font-medium truncate rounded text-amber-800 bg-amber-100/70 border border-amber-200"
+                            title={holiday.name}
+                          >
+                            Feriado: {holiday.name}
                           </div>
-                          <div className="mt-1 line-clamp-2 font-semibold leading-tight">{d.title}</div>
-                          {student && <div className="mt-1 truncate text-[9px] opacity-75">{student.person.first_name} {student.person.last_name}</div>}
-                        </div>
-                      );
-                    })}
+                        )}
+                        {dayDefenses.slice(0, 3).map((d) => {
+                          const conf = getStatusConfig(d.status);
+                          const students = (d.participants || []).filter((p) => p.participant_type === 'STUDENT');
 
-                    {dayDefenses.length > 3 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenPreview(dayDefenses[0]);
-                        }}
-                        className="text-[10px] font-semibold text-[#091E3A] hover:underline block text-left pt-0.5"
-                        title={`Ver las ${dayDefenses.length} sustentaciones del día`}
-                      >
-                        +{dayDefenses.length - 3} sustentaciones más...
-                      </button>
-                    )}
-                  </div>
+                          return (
+                            <div
+                              key={d.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenPreview(d);
+                              }}
+                              className={`px-2 py-1.5 lg:px-2.5 lg:py-2 text-[10px] sm:text-[11px] rounded-md border border-slate-200 border-l-4 ${conf.borderColor} bg-slate-50/90 hover:bg-white hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer`}
+                              title={`${d.code}: ${d.title} (Clic para vista previa)`}
+                            >
+                              <div className="flex items-center justify-between gap-1 text-[9px]">
+                                <span className="font-mono font-bold text-slate-700">
+                                  {formatTime(d.start_time).replace(/:\d\d /, ' ')}
+                                </span>
+                                <span className="text-[8px] uppercase tracking-wide opacity-75 font-medium">
+                                  {getModalityLabel(d.modality)}
+                                </span>
+                              </div>
+                              {/* Nombre de la sustentación */}
+                              <div className="mt-1 line-clamp-2 font-semibold text-slate-900 leading-tight">
+                                {d.title}
+                              </div>
+                              {/* Sustentantes */}
+                              {students.length > 0 && (
+                                <div className="mt-1 truncate text-[9px] text-slate-600 font-medium">
+                                  <span className="text-slate-400">Sustentante: </span>
+                                  <span className="text-slate-800 font-semibold">
+                                    {students.map((s) => `${s.person.first_name} ${s.person.last_name}`).join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
 
-                  {/* Cell Footer metadata */}
-                  <div className="text-[9px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-100">
-                    <span className="uppercase text-[8px]">
-                      {dayDefenses.length > 0 ? `${dayDefenses.length} acto(s)` : holiday ? 'Día no laborable' : ''}
-                    </span>
-                    {dayDefenses.some((d) => d.modality === 'VIRTUAL' || d.modality === 'HYBRID') && (
-                      <Video className="h-3 w-3 text-blue-600 inline" />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : viewMode === 'day' ? (
-        /* 2. DAILY SCHEDULE VIEW */
-        <div className="space-y-4">
-          {/* Week Day Selector Strip */}
-          <div className="bg-[#fbf6e8] border border-[#eadfc8] p-3 rounded-xl shadow-sm flex items-center justify-between gap-2 overflow-x-auto">
-            <div className="text-xs font-mono font-medium text-slate-500 uppercase tracking-wider px-2 shrink-0 hidden md:block">
-              Semana:
+                        {dayDefenses.length > 3 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDay(day);
+                              setViewMode('day');
+                            }}
+                            className="text-[10px] font-semibold text-[#091E3A] hover:underline block text-left pt-0.5"
+                          >
+                            +{dayDefenses.length - 3} sustentaciones más...
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Cell Footer */}
+                      <div className="hidden sm:flex text-[9px] text-slate-400 items-center justify-between pt-1 border-t border-slate-100">
+                        <span className="uppercase text-[8px]">
+                          {dayDefenses.length > 0 ? `${dayDefenses.length} acto(s)` : holiday ? 'No laborable' : ''}
+                        </span>
+                        {dayDefenses.some((d) => d.modality === 'VIRTUAL' || d.modality === 'HYBRID') && (
+                          <Video className="h-3 w-3 text-blue-500 inline" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-1 min-w-[500px]">
+
+            {/* Mobile Helper: When day is tapped on mobile, show that day's cards right below! */}
+            <div className="block sm:hidden">
+              <div className="flex items-baseline justify-between mb-3 px-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-slate-950">
+                    {format(selectedDay, 'dd')}
+                  </span>
+                  <span className="text-sm font-bold uppercase text-rose-600">
+                    {format(selectedDay, 'EEEE', { locale: es })}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">
+                    {format(selectedDay, 'MMMM yyyy', { locale: es })}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setViewMode('day')}
+                  className="text-xs font-semibold text-[#091E3A] hover:underline"
+                >
+                  Ver en diario →
+                </button>
+              </div>
+
+              {defensesForSelectedDay.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-xs text-slate-500">
+                  No hay sustentaciones programadas para el {format(selectedDay, 'd MMMM', { locale: es })}.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {defensesForSelectedDay.map((d) => (
+                    <DefenseMinimalCard
+                      key={d.id}
+                      defense={d}
+                      onClick={() => handleOpenPreview(d)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : viewMode === 'day' ? (
+          /* ========================================================= */
+          /* 2. DAILY SCHEDULE VIEW (Maximalist Date + Minimal Cards)  */
+          /* ========================================================= */
+          <div className="space-y-6">
+            {/* Week Day Selector Strip */}
+            <div className="bg-white border border-slate-200/90 p-2 sm:p-2.5 rounded-2xl shadow-sm flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               {weekDaysForDailyView.map((day) => {
                 const dayKey = format(day, 'yyyy-MM-dd');
                 const isSelected = isSameDay(day, selectedDay);
@@ -561,338 +861,197 @@ export const PublicAgendaPage: React.FC = () => {
                   <button
                     key={dayKey}
                     onClick={() => setSelectedDay(day)}
-                    className={`flex-1 py-1.5 px-2 text-center rounded-sm border transition-all min-w-[50px] ${
+                    className={`flex-1 min-w-[56px] py-2 px-2 text-center rounded-xl transition-all ${
                       isSelected
-                        ? 'border-[#091E3A] bg-[#091E3A] text-white'
+                        ? 'bg-[#091E3A] text-white shadow-sm'
                         : isCurrent
-                        ? 'border-amber-400 bg-amber-50 text-slate-900'
-                        : 'border-[#eadfc8] bg-[#fffdf7] hover:bg-[#f8f0df] text-slate-800'
+                        ? 'bg-amber-50 text-slate-900 border border-amber-300'
+                        : 'bg-transparent text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <div
-                      className={`text-[10px] font-mono font-medium uppercase ${
-                        isSelected ? 'text-amber-400' : 'text-slate-500'
-                      }`}
-                    >
+                    <div className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-amber-400' : 'text-slate-500'}`}>
                       {format(day, 'EEE', { locale: es })}
                     </div>
-                    <div className="text-sm font-semibold leading-none mt-1">
+                    <div className="text-base sm:text-lg font-black leading-none mt-1">
                       {format(day, 'd')}
                     </div>
-                    {count > 0 && (
-                      <div className="mt-1 flex justify-center">
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            isSelected ? 'bg-amber-400' : 'bg-emerald-600'
-                          }`}
-                        />
-                      </div>
-                    )}
+                    <div className="mt-1 flex justify-center h-1.5">
+                      {count > 0 && (
+                        <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-emerald-500'}`} />
+                      )}
+                    </div>
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          {/* Daily Schedule Board */}
-          <div className="bg-[#fffdf7] border border-[#eadfc8] rounded-xl shadow-sm overflow-hidden">
-            {/* Day Header Banner */}
-            <div className="bg-[#f7efdc] text-[#091E3A] p-5 sm:p-6 border-b border-[#eadfc8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                  <div className="text-[11px] font-mono text-[#a66d35] uppercase tracking-wider">
-                  Cronograma de la Jornada
-                </div>
-                  <h2 className="text-xl sm:text-2xl font-semibold capitalize text-[#091E3A] mt-0.5 leading-snug">
-                  {format(selectedDay, 'EEEE, d MMMM yyyy', { locale: es })}
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                {holidaysByDate.get(selectedDayKey) && (
-                  <span className="font-mono text-xs font-medium px-2.5 py-1 bg-amber-100 border border-amber-300 text-amber-950 rounded-sm">
-                    Feriado: {holidaysByDate.get(selectedDayKey)?.name}
+            {/* Selected Day Maximalist Hero Header */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Maximalist Date Elements */}
+                <div className="flex items-baseline sm:items-center gap-4">
+                  <span className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tighter text-slate-950 leading-none select-none">
+                    {format(selectedDay, 'dd')}
                   </span>
-                )}
-                  <span className="font-mono text-xs font-medium px-2.5 py-1 bg-white border border-[#eadfc8] text-slate-700 rounded-full">
-                  {defensesForSelectedDay.length} Sustentaciones
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setViewMode('month')}
-                  className="rounded-sm border border-slate-300 bg-white text-slate-900 hover:bg-slate-100 text-xs font-mono uppercase"
-                >
-                  Volver al Mes
-                </Button>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base sm:text-lg font-bold uppercase tracking-wider text-rose-600">
+                        {format(selectedDay, 'EEEE', { locale: es })}
+                      </span>
+                      {holidaysByDate.get(selectedDayKey) && (
+                        <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                          Feriado: {holidaysByDate.get(selectedDayKey)?.name}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs sm:text-sm text-slate-500 font-medium capitalize mt-0.5">
+                      {format(selectedDay, 'd MMMM yyyy', { locale: es })}
+                    </div>
+                    <div className="text-xs text-slate-400 font-mono mt-0.5">
+                      {defensesForSelectedDay.length} {defensesForSelectedDay.length === 1 ? 'sustentación programada' : 'sustentaciones programadas para esta jornada'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick actions */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewMode('month')}
+                    className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-medium h-9"
+                  >
+                    <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                    Ver Mes
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-medium h-9"
+                  >
+                    <List className="h-3.5 w-3.5 mr-1.5" />
+                    Ver Agenda
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Daily Schedule List */}
+            {/* Daily Schedule List of Minimalist Cards */}
             {defensesForSelectedDay.length === 0 ? (
-              <div className="p-16 text-center">
-                <CalendarCheck className="h-10 w-10 text-slate-400 mx-auto mb-3" />
-                <div className="text-lg font-semibold text-slate-800 uppercase">
-                  No hay sustentaciones programadas para este día
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center">
+                <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                  <CalendarCheck className="h-6 w-6" />
                 </div>
-                <p className="text-xs text-slate-500 mt-1 font-normal">
-                  Puede consultar los demás días de la semana con la barra superior o volver al calendario mensual.
+                <h3 className="text-base font-semibold text-slate-800">
+                  No hay sustentaciones programadas para este día
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                  Puede consultar los demás días de la semana con la barra superior o explorar la agenda completa.
                 </p>
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleToday}
-                    className="rounded-sm border border-slate-300 font-mono text-xs uppercase"
+                    className="text-xs rounded-xl border-slate-300"
                   >
-                    Ir al día de Hoy
+                    Ir a Hoy
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setViewMode('list')}
-                    className="rounded-sm font-mono text-xs uppercase"
+                    className="text-xs rounded-xl border-slate-300"
                   >
                     Ver todas en Agenda
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {defensesForSelectedDay.map((defense) => {
-                  const students = (defense.participants || []).filter((p) => p.participant_type === 'STUDENT');
-                  const jurors = (defense.participants || []).filter((p) => p.participant_type === 'JUROR');
-                  const advisors = (defense.participants || []).filter((p) => p.participant_type === 'ADVISOR');
+              <div className="space-y-3">
+                {defensesForSelectedDay.map((defense) => (
+                  <DefenseMinimalCard
+                    key={defense.id}
+                    defense={defense}
+                    onClick={() => handleOpenPreview(defense)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ========================================================= */
+          /* 3. AGENDA VIEW (Maximalist Date + Minimalist Cards)       */
+          /* ========================================================= */
+          <div className="space-y-6">
+            {groupedDefensesByDate.length === 0 ? (
+              <div className="p-16 text-center bg-white border border-slate-200 rounded-2xl shadow-sm">
+                <div className="text-lg font-semibold text-slate-800">
+                  No hay sustentaciones registradas con estos filtros
+                </div>
+                <p className="text-xs text-slate-500 mt-1 font-normal">
+                  Pruebe seleccionando otra unidad académica o quitando los términos de búsqueda.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="mt-4 rounded-xl border border-slate-300 text-xs font-medium"
+                >
+                  Restablecer Filtros
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-10">
+                {groupedDefensesByDate.map((group) => {
+                  const { dayStr, monthStr, weekdayStr, year } = parseDateParts(group.dateKey);
 
                   return (
-                    <div
-                      key={defense.id}
-                      onClick={() => handleOpenPreview(defense)}
-                      className="mx-3 my-3 rounded-md border border-[#eadfc8] bg-white p-4 sm:p-5 shadow-sm hover:border-[#091E3A]/40 hover:bg-[#fffaf0] hover:shadow-md transition-all cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    <section
+                      key={group.dateKey}
+                      className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 lg:gap-10 pt-8 first:pt-0 border-t first:border-t-0 border-slate-200"
                     >
-                      {/* Left Time Box */}
-                      <div className="flex items-center gap-4 lg:w-60 shrink-0 border-b lg:border-b-0 pb-3 lg:pb-0">
-                        <div className="bg-[#F7F1E3] text-[#091E3A] p-3 text-center min-w-[88px] rounded-md border border-[#E7D9B9]">
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Hora</div>
-                          <div className="text-lg font-semibold leading-none text-[#091E3A] mt-2">
-                            {formatTime(defense.start_time).replace(/:\d\d /, ' ')}
-                          </div>
-                          <div className="text-[10px] font-mono text-slate-500 mt-1">
-                            {defense.estimated_duration_minutes || 120} min
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="text-xs font-mono font-medium text-slate-900">
-                            {formatTime(defense.start_time)} a {formatTime(defense.estimated_end_time)}
-                          </div>
-                          <div className="text-xs text-slate-500 flex items-center gap-1 font-normal">
-                            <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span className="truncate max-w-[140px]">
-                              {defense.space?.name || defense.modality}
+                      {/* Maximalist Date Block (Sticky on Desktop, top on Mobile) */}
+                      <div className="sm:w-28 md:w-36 lg:w-44 shrink-0 sm:sticky sm:top-24">
+                        <div className="flex items-baseline sm:flex-col gap-3 sm:gap-0 pb-2 sm:pb-0 border-b sm:border-b-0 border-slate-200">
+                          {/* Huge bold numeral */}
+                          <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter text-slate-950 leading-none select-none">
+                            {dayStr}
+                          </span>
+                          <div className="flex flex-col sm:mt-1">
+                            {/* Day of week in accent color */}
+                            <span className="text-sm sm:text-base font-bold uppercase tracking-wider text-rose-600">
+                              {weekdayStr}
+                            </span>
+                            {/* Month and year in clean typography */}
+                            <span className="text-[11px] sm:text-xs text-slate-400 font-medium uppercase tracking-wide">
+                              {monthStr} {year}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono mt-1 hidden sm:block">
+                              {group.defenses.length} {group.defenses.length === 1 ? 'sustentación' : 'sustentaciones'}
                             </span>
                           </div>
-                          <span className="inline-block border border-slate-200 bg-slate-100 text-slate-700 text-[10px] font-mono uppercase px-1.5 py-0.2 rounded-sm">
-                            {getModalityLabel(defense.modality)}
-                          </span>
                         </div>
                       </div>
 
-                      {/* Middle Thesis Details */}
-                      <div className="flex-1 space-y-1.5 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-medium text-white bg-[#091E3A] px-2 py-0.5 rounded-sm">
-                            {defense.code}
-                          </span>
-                          <StatusBadge status={defense.status} />
-                          <span className="text-xs font-medium text-slate-600 uppercase">
-                            {defense.unit?.acronym || defense.unit?.name}
-                          </span>
-                        </div>
-
-                        <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-snug hover:text-[#091E3A] transition-colors">
-                          {defense.title}
-                        </h3>
-
-                        {/* Students and Jurors preview */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 font-normal">
-                          {students.length > 0 && (
-                            <div className="flex items-center gap-1">
-                              <GraduationCap className="h-3.5 w-3.5 text-[#091E3A] shrink-0" />
-                              <span>Tesista: </span>
-                              <span className="font-medium text-slate-800">
-                                {students.map((s) => `${s.person.first_name} ${s.person.last_name}`).join(', ')}
-                              </span>
-                            </div>
-                          )}
-
-                          {jurors.length > 0 && (
-                            <div className="flex items-center gap-1 text-slate-500">
-                              <Users className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              <span>{jurors.length} jurados asignados</span>
-                            </div>
-                          )}
-                        </div>
+                      {/* Stack of Minimalist Defense Cards for this Date */}
+                      <div className="flex-1 space-y-3 min-w-0">
+                        {group.defenses.map((defense) => (
+                          <DefenseMinimalCard
+                            key={defense.id}
+                            defense={defense}
+                            onClick={() => handleOpenPreview(defense)}
+                          />
+                        ))}
                       </div>
-
-                      {/* Right Actions */}
-                      <div className="flex items-center justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenPreview(defense);
-                          }}
-                          className="rounded-sm border-slate-300 hover:border-[#091E3A] hover:bg-[#091E3A] hover:text-white text-xs font-medium uppercase tracking-wider h-8"
-                        >
-                          <span>Vista Rápida</span>
-                          <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
+                    </section>
                   );
                 })}
               </div>
             )}
           </div>
-        </div>
-      ) : (
-        /* 3. AGENDA LIST VIEW */
-        <div className="space-y-3">
-          {filteredDefenses.length === 0 ? (
-            <div className="p-16 text-center bg-white border border-slate-200 rounded-sm shadow-sm">
-              <div className="text-lg font-semibold text-slate-800 uppercase">
-                No hay sustentaciones registradas con estos filtros
-              </div>
-              <p className="text-xs text-slate-500 mt-1 font-normal">
-                Pruebe seleccionando otra unidad académica o quitando los términos de búsqueda.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetFilters}
-                className="mt-4 rounded-sm border border-slate-300 font-mono text-xs uppercase font-normal"
-              >
-                Restablecer Filtros
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {filteredDefenses.map((defense) => {
-                const students = (defense.participants || []).filter((p) => p.participant_type === 'STUDENT');
-                const jurors = (defense.participants || []).filter((p) => p.participant_type === 'JUROR');
-                const advisors = (defense.participants || []).filter((p) => p.participant_type === 'ADVISOR');
-                const { dayStr, monthStr, weekdayStr, year } = parseDateParts(defense.scheduled_date);
-
-                return (
-                  <article
-                    key={defense.id}
-                    onClick={() => handleOpenPreview(defense)}
-                    className="bg-[#fffdf7] border border-[#eadfc8] hover:border-[#091E3A]/50 hover:bg-white transition-all cursor-pointer p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5 rounded-xl shadow-sm"
-                  >
-                    {/* Left Date Block */}
-                    <div className="flex items-center gap-4 sm:gap-5 border-b lg:border-b-0 lg:border-r border-slate-100 pb-3 lg:pb-0 lg:pr-5 shrink-0">
-                      <div className="bg-[#f7efdc] text-[#091E3A] p-3 text-center min-w-[84px] sm:min-w-[92px] border border-[#eadfc8] rounded-md">
-                        <div className="text-[10px] font-mono text-amber-400 uppercase tracking-wider leading-none">
-                          {weekdayStr}
-                        </div>
-                        <div className="text-3xl sm:text-4xl font-semibold text-[#091E3A] leading-none my-1">
-                          {dayStr}
-                        </div>
-                        <div className="text-[11px] font-mono text-slate-500 font-medium leading-none">
-                          {monthStr} {year}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-slate-900">
-                          <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                          <span>
-                            {formatTime(defense.start_time)} – {formatTime(defense.estimated_end_time)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-normal">
-                          <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[170px]">
-                            {defense.space?.name || (defense.modality === 'VIRTUAL' ? 'Plataforma Virtual' : 'Por definir')}
-                          </span>
-                        </div>
-                        <span className="inline-block border border-slate-200 bg-slate-100 text-slate-700 text-[10px] font-mono uppercase px-1.5 py-0.2 rounded-sm">
-                            {getModalityLabel(defense.modality)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Middle Thesis Info */}
-                    <div className="flex-1 space-y-1.5 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-medium text-white bg-[#091E3A] px-2 py-0.5 border border-[#091E3A] rounded-sm">
-                          {defense.code}
-                        </span>
-                        <StatusBadge status={defense.status} />
-                        <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                          {defense.unit?.acronym || defense.unit?.name}
-                        </span>
-                      </div>
-
-                        <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-snug tracking-tight hover:text-[#091E3A] transition-colors">
-                        {defense.title}
-                      </h3>
-
-                      {/* Tesistas, Asesores y Jurados */}
-                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 pt-1 text-xs text-slate-600 font-normal">
-                        {students.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <GraduationCap className="h-3.5 w-3.5 text-[#091E3A] shrink-0" />
-                            <span>Tesista: </span>
-                            <span className="font-medium text-slate-900">
-                              {students.map((s) => `${s.person.first_name} ${s.person.last_name}`).join(', ')}
-                            </span>
-                          </div>
-                        )}
-
-                        {advisors.length > 0 && (
-                          <div className="flex items-center gap-1 text-slate-600">
-                            <span>Asesor: </span>
-                            <span className="font-medium text-slate-800">
-                              {advisors.map((a) => `${a.person.first_name} ${a.person.last_name}`).join(', ')}
-                            </span>
-                          </div>
-                        )}
-
-                        {jurors.length > 0 && (
-                          <div className="flex items-center gap-1 text-slate-500">
-                            <Users className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span>{jurors.length} jurados asignados</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right Button */}
-                    <div className="flex items-center justify-end shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenPreview(defense);
-                        }}
-                        className="rounded-sm border-slate-300 hover:bg-[#091E3A] hover:border-[#091E3A] hover:text-white text-xs font-medium uppercase tracking-wider h-8"
-                      >
-                        <span>Vista Rápida</span>
-                        <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                      </Button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
+        )}
       </div>
 
       {/* Defense Quick Preview Modal */}

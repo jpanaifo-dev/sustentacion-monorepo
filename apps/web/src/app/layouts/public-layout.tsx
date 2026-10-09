@@ -8,27 +8,31 @@ export const PublicLayout: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Main Institutional Header */}
       <header className="bg-[#091E3A] border-b border-white/20 sticky top-0 z-40">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="h-16 w-auto bg-[#091E3A] px-3 py-2 flex items-center shrink-0 rounded-sm">
-              <img src="/brands/postgrado_brandwhite.webp" alt="Escuela de Postgrado UNAP" className="h-full w-auto max-w-[360px] object-contain object-left" />
-            </div>
-            <div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <NavLink to="/agenda" className="h-10 sm:h-12 md:h-14 w-auto flex items-center shrink-0">
+              <img
+                src="/brands/postgrado_brandwhite.webp"
+                alt="Escuela de Postgrado UNAP"
+                className="h-full w-auto max-w-[180px] sm:max-w-[260px] md:max-w-[320px] object-contain object-left"
+              />
+            </NavLink>
+            <div className="hidden sm:block border-l border-white/20 pl-3">
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-semibold text-white uppercase tracking-tight leading-none whitespace-nowrap">
+                <span className="text-sm font-semibold text-white uppercase tracking-tight leading-none">
                   Agenda de Sustentaciones
-                </h1>
-                <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-amber-400 text-slate-950 uppercase border border-amber-500 rounded-sm">
+                </span>
+                <span className="px-1.5 py-0.5 text-[9px] font-mono font-medium bg-amber-400 text-slate-950 uppercase rounded">
                   OFICIAL
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="rounded-sm border border-slate-600 bg-transparent text-white hover:bg-white hover:border-white hover:text-[#091E3A] text-xs h-9 font-medium uppercase tracking-wider">
+          <div className="flex items-center gap-2 shrink-0">
+            <Button asChild variant="outline" size="sm" className="rounded-lg border-white/30 bg-transparent text-white hover:bg-white hover:text-[#091E3A] text-xs h-8 sm:h-9 font-medium">
               <NavLink to="/agenda">
-                <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                <Calendar className="h-3.5 w-3.5 mr-1 sm:mr-1.5" />
                 <span>Ver Agenda</span>
               </NavLink>
             </Button>
