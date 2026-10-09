@@ -383,16 +383,11 @@ export const DefenseFormPage: React.FC = () => {
       });
     } else if (units.length > 0 && facilities.length > 0) {
       setValue('unit_id', units[0].id);
-      const defaultFacility = isDefenseManager
-        ? facilities.find((facility) => /central/i.test(facility.name)) || facilities[0]
-        : facilities[0];
+      // La sede inicial siempre debe ser la Central, independientemente del
+      // orden en que el API devuelva las sedes. El aula queda sin asignar.
+      const defaultFacility = facilities.find((facility) => /central/i.test(facility.name)) || facilities[0];
       setValue('facility_id', defaultFacility.id);
-      if (isDefenseManager) {
-        setValue('space_id', null);
-      } else {
-        const firstSpace = spaces.find((space) => space.facility_id === defaultFacility.id);
-        if (firstSpace) setValue('space_id', firstSpace.id);
-      }
+      setValue('space_id', null);
     }
   }, [existingDefense, units, facilities, spaces, isDefenseManager, reset, setValue]);
 
@@ -944,8 +939,7 @@ export const DefenseFormPage: React.FC = () => {
                             onChange={(event) => {
                               const facilityId = event.target.value;
                               setValue('facility_id', facilityId || null, { shouldValidate: true, shouldDirty: true });
-                              const firstSpace = spaces.find((space) => space.facility_id === facilityId && space.is_active);
-                              setValue('space_id', firstSpace?.id || null, { shouldValidate: true, shouldDirty: true });
+                              setValue('space_id', null, { shouldValidate: true, shouldDirty: true });
                             }}
                             className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-unap-navy"
                           >
