@@ -29,8 +29,13 @@ app.setErrorHandler((error, _request, reply) => {
           : statusCode === 500 ? 'No se pudo completar la operación.' : errorMessage;
   return reply.code(statusCode).send({ error: message });
 });
+const allowedOrigins = (process.env.WEB_ORIGIN ?? 'https://sustentacion-monorepo.vercel.app')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 await app.register(cors, {
-  origin: process.env.WEB_ORIGIN?.split(',') ?? true,
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 });
