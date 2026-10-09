@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DefenseWithRelations } from '../../types';
 import { StatusBadge } from './status-badge';
-import { formatDate, formatTime, getJurorRoleLabel, getModalityLabel, normalizeDateOnly } from '../../lib/utils';
+import { formatDate, formatTime } from '../../lib/utils';
 import { Button } from '../ui/button';
 import {
   Dialog,
@@ -35,15 +35,6 @@ interface DefenseQuickPreviewModalProps {
   onSelectDefense?: (defense: DefenseWithRelations) => void;
   onViewDayTimeline?: (date: string) => void;
 }
-
-const PersonAvatar: React.FC<{ person: any; className?: string }> = ({ person, className = 'h-10 w-10' }) => {
-  const initials = `${person.first_name?.[0] || ''}${person.last_name?.[0] || ''}`.toUpperCase();
-  return person.photo_url ? (
-    <img src={person.photo_url} alt="" className={`${className} rounded-full border border-slate-200 object-cover shrink-0`} />
-  ) : (
-    <span className={`${className} inline-flex items-center justify-center rounded-full border border-slate-200 bg-[#091E3A] text-[10px] font-semibold text-white shrink-0`}>{initials || '—'}</span>
-  );
-};
 
 export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> = ({
   defense,
@@ -79,9 +70,8 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
       `Código: ${defense.code}\nUnidad: ${defense.unit?.name || 'EPG UNAP'}\nModalidad: ${defense.modality}\nEnlace oficial: ${window.location.origin}/agenda/${defense.id}`
     );
     const location = encodeURIComponent(defense.space?.name || defense.facility?.name || 'Escuela de Postgrado UNAP');
-    const dateOnly = normalizeDateOnly(defense.scheduled_date);
-    const startIso = `${dateOnly.replace(/-/g, '')}T${defense.start_time.replace(/:/g, '')}00`;
-    const endIso = `${dateOnly.replace(/-/g, '')}T${(defense.estimated_end_time || defense.start_time).replace(/:/g, '')}00`;
+    const startIso = `${defense.scheduled_date.replace(/-/g, '')}T${defense.start_time.replace(/:/g, '')}00`;
+    const endIso = `${defense.scheduled_date.replace(/-/g, '')}T${(defense.estimated_end_time || defense.start_time).replace(/:/g, '')}00`;
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${details}&location=${location}`;
   };
 
@@ -92,35 +82,43 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl rounded-sm">
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 border border-slate-300 shadow-xl rounded-sm">
         {/* Modal Top Institutional Header */}
-        <div className="shrink-0 bg-white text-slate-900 p-5 sm:p-6 lg:px-8 border-b border-slate-200">
+        <div className="bg-[#091E3A] text-white p-5 sm:p-6 border-b border-amber-400/80">
           <div className="flex flex-wrap items-center gap-2 mb-2.5">
-            <span className="font-mono text-xs font-semibold bg-amber-100 text-slate-900 border border-amber-300 px-2 py-0.5 rounded-sm">
+            <span className="font-mono text-xs font-semibold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-sm">
               {defense.code}
             </span>
             <StatusBadge status={defense.status} />
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="text-xs text-slate-300 font-medium">
               {defense.unit?.acronym || defense.unit?.name}
             </span>
-            <span className="text-[10px] font-mono uppercase px-2 py-0.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-sm">{getModalityLabel(defense.modality)}</span>
+            <span className="text-[10px] font-mono uppercase px-2 py-0.5 bg-slate-800 text-amber-300 border border-slate-700 rounded-sm">
+              {defense.modality === 'PRESENTIAL'
+                ? 'Presencial'
+                : defense.modality === 'VIRTUAL'
+                ? 'Virtual'
+                : 'Híbrida'}
+            </span>
           </div>
 
-          <DialogTitle className="text-lg sm:text-2xl font-semibold text-slate-900 leading-snug tracking-tight">
+          <DialogTitle className="text-base sm:text-lg font-semibold text-white leading-snug tracking-tight">
             {defense.title}
           </DialogTitle>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500 mt-2 font-normal">
+          <div className="flex items-center gap-2 text-xs text-slate-300 mt-2 font-normal">
+            <Building className="h-3.5 w-3.5 text-amber-400 shrink-0" />
             <span className="truncate">{defense.unit?.name || 'Escuela de Postgrado UNAP'}</span>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-white text-slate-900">
+        <div className="p-5 sm:p-6 space-y-5 bg-white text-slate-900">
           {/* Multiple defenses on the same day switcher banner */}
           {sameDayDefenses.length > 1 && (
-            <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 space-y-2">
+            <div className="bg-amber-50/80 border border-amber-200 rounded-sm p-3 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                <div className="flex items-center gap-1.5 font-semibold text-[#091E3A]">
+                  <Layers className="h-3.5 w-3.5 text-amber-600" />
                   <span>
                     Jornada con {sameDayDefenses.length} sustentaciones ({formatDate(defense.scheduled_date)})
                   </span>
@@ -131,9 +129,10 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
                       onClose();
                       onViewDayTimeline(defense.scheduled_date);
                     }}
-                    className="text-[11px] font-medium text-amber-300 hover:underline flex items-center gap-0.5"
+                    className="text-[11px] font-medium text-[#091E3A] hover:underline flex items-center gap-0.5"
                   >
                     <span>Ver jornada</span>
+                    <ChevronRight className="h-3 w-3" />
                   </button>
                 )}
               </div>
@@ -155,7 +154,7 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
                       className={`text-xs px-2.5 py-1 rounded-sm border transition-all text-left flex items-center gap-1.5 ${
                         isCurrent
                           ? 'bg-[#091E3A] text-white border-[#091E3A] font-medium shadow-xs ring-1 ring-[#091E3A]'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:bg-slate-50'
+                          : 'bg-white text-slate-700 border-amber-200 hover:border-slate-400 hover:bg-slate-50'
                       }`}
                       title={d.title}
                     >
@@ -175,26 +174,48 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
             </div>
           )}
 
-          <div className="overflow-hidden rounded-sm border border-slate-200 text-sm">
-            {[
-              ['Fecha', formatDate(defense.scheduled_date)],
-              ['Horario', `${formatTime(defense.start_time)} a ${formatTime(defense.estimated_end_time)} (${defense.estimated_duration_minutes || 120} min)`],
-              ['Modalidad', getModalityLabel(defense.modality)],
-              ['Sede', defense.facility?.name || 'No asignada'],
-              ['Espacio', defense.space?.name || (defense.modality === 'VIRTUAL' ? defense.virtual_platform || 'Plataforma virtual' : 'No asignado')],
-              ...(defense.office_number ? [['Número de oficio / documento', defense.office_number]] : []),
-            ].map(([label, value]) => (
-              <div key={label} className="grid grid-cols-[minmax(135px,0.38fr)_minmax(0,1fr)] border-b border-slate-100 last:border-b-0">
-                <div className="bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-500">{label}</div>
-                <div className="px-3 py-2.5 text-sm font-semibold text-slate-900">{value}</div>
+          {/* Quick Info Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {/* Horario */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm space-y-1">
+              <div className="text-slate-500 font-medium flex items-center gap-1.5 text-[11px]">
+                <Calendar className="h-3.5 w-3.5 text-amber-600" />
+                <span>Fecha y Horario</span>
               </div>
-            ))}
+              <div className="font-semibold text-slate-900 text-sm">
+                {formatDate(defense.scheduled_date)}
+              </div>
+              <div className="text-slate-700 flex items-center gap-1 font-mono text-[11px]">
+                <Clock className="h-3 w-3 text-slate-400" />
+                <span>{formatTime(defense.start_time)} a {formatTime(defense.estimated_end_time)}</span>
+                <span className="text-slate-400">({defense.estimated_duration_minutes || 120} min)</span>
+              </div>
+            </div>
+
+            {/* Ubicación / Enlace */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm space-y-1">
+              <div className="text-slate-500 font-medium flex items-center gap-1.5 text-[11px]">
+                {defense.modality === 'VIRTUAL' ? (
+                  <Video className="h-3.5 w-3.5 text-blue-600" />
+                ) : (
+                  <MapPin className="h-3.5 w-3.5 text-amber-600" />
+                )}
+                <span>Sede y Ambiente</span>
+              </div>
+              <div className="font-semibold text-slate-900 text-sm truncate" title={defense.space?.name || 'Por asignar'}>
+                {defense.space?.name || (defense.modality === 'VIRTUAL' ? 'Plataforma Virtual' : 'Por definir')}
+              </div>
+              <div className="text-slate-600 text-[11px] truncate">
+                {defense.facility?.name || (defense.virtual_platform ? `Plataforma: ${defense.virtual_platform}` : 'Escuela de Postgrado UNAP')}
+              </div>
+            </div>
           </div>
 
           {/* Enlace Virtual (si existe) */}
           {defense.virtual_url && (
-            <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 flex items-center justify-between gap-3 text-xs">
+            <div className="bg-blue-50/70 border border-blue-200 rounded-sm p-3 flex items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2">
+                <Video className="h-4 w-4 text-blue-700 shrink-0" />
                 <div>
                   <span className="font-semibold text-blue-950">Transmisión Virtual en Vivo</span>
                   <p className="text-[11px] text-blue-800">
@@ -209,13 +230,17 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
                 className="px-3 py-1.5 bg-blue-900 hover:bg-blue-950 text-white font-medium rounded-sm inline-flex items-center gap-1.5 shrink-0 text-xs transition-colors"
               >
                 <span>Acceder a Sala</span>
+                <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           )}
 
           {/* Candidato al Grado */}
-          <div className="border border-slate-200 bg-white rounded-sm p-3.5 space-y-2">
-            <div className="text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">Candidato(s) al Grado (Tesista)</div>
+          <div className="border border-slate-200 rounded-sm p-3.5 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#091E3A] uppercase tracking-wide border-b border-slate-100 pb-2">
+              <GraduationCap className="h-4 w-4 text-amber-600" />
+              <span>Candidato(s) al Grado (Tesista)</span>
+            </div>
 
             {students.length === 0 ? (
               <p className="text-xs text-slate-500">Tesista por confirmar en el expediente.</p>
@@ -223,9 +248,8 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
               <div className="space-y-1.5">
                 {students.map((s) => (
                   <div key={s.id} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3 text-base font-semibold text-slate-900">
-                      <PersonAvatar person={s.person} />
-                      <span>{s.person.first_name} {s.person.last_name}</span>
+                    <div className="font-semibold text-slate-900">
+                      {s.person.first_name} {s.person.last_name}
                     </div>
                     {s.person.email && (
                       <span className="text-[11px] text-slate-500 font-mono hidden sm:inline">
@@ -239,9 +263,12 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
           </div>
 
           {/* Jurado Calificador */}
-          <div className="border border-slate-200 bg-white rounded-sm p-3.5 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">
-              <span>Jurado Calificador Oficial</span>
+          <div className="border border-slate-200 rounded-sm p-3.5 space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#091E3A] uppercase tracking-wide border-b border-slate-100 pb-2">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-amber-600" />
+                <span>Jurado Calificador Oficial</span>
+              </div>
               <span className="text-[10px] text-slate-500 font-mono font-normal">
                 {jurors.length} integrantes
               </span>
@@ -253,12 +280,11 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                 {jurors.map((j) => (
                   <div key={j.id} className="p-2 bg-slate-50 border border-slate-200 rounded-sm flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 font-medium text-slate-900 truncate">
-                      <PersonAvatar person={j.person} className="h-9 w-9" />
+                    <span className="font-medium text-slate-900 truncate">
                       {j.person.first_name} {j.person.last_name}
                     </span>
                     <span className="text-[10px] font-mono uppercase bg-white border border-slate-300 text-slate-700 px-1.5 py-0.5 rounded-sm shrink-0">
-                      {getJurorRoleLabel(j.role)}
+                      {j.role || 'Miembro'}
                     </span>
                   </div>
                 ))}
@@ -269,29 +295,32 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
           {/* Asesor */}
           {advisors.length > 0 && (
             <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-sm border border-slate-200 flex items-center gap-2">
-              <span className="font-medium text-slate-900">Asesor de Tesis:</span>
-              <span className="flex items-center gap-1.5 text-base">
-                {advisors.slice(0, 2).map((advisor) => <PersonAvatar key={advisor.id} person={advisor.person} className="h-8 w-8" />)}
-                {advisors.map((a) => `${a.person.first_name} ${a.person.last_name}`).join(', ')}
-              </span>
+              <span className="font-medium text-slate-800">Asesor de Tesis:</span>
+              <span>{advisors.map((a) => `${a.person.first_name} ${a.person.last_name}`).join(', ')}</span>
             </div>
           )}
         </div>
 
         {/* Modal Bottom Action Footer with "Ver más" */}
-        <div className="shrink-0 p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleShare}
-              className="text-xs font-medium rounded-sm border-slate-300 text-slate-700 hover:bg-white h-9 flex-1 sm:flex-none"
+              className="text-xs font-medium rounded-sm border-slate-300 h-9 flex-1 sm:flex-none"
             >
               {copied ? (
-                <span className="text-emerald-700">Copiado</span>
+                <>
+                  <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+                  <span className="text-emerald-700">Copiado</span>
+                </>
               ) : (
-                <span>Compartir</span>
+                <>
+                  <Share2 className="h-3.5 w-3.5 mr-1 text-slate-600" />
+                  <span>Compartir</span>
+                </>
               )}
             </Button>
 
@@ -300,9 +329,10 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
               type="button"
               variant="outline"
               size="sm"
-              className="text-xs font-medium rounded-sm border-slate-300 text-slate-700 hover:bg-white h-9 flex-1 sm:flex-none"
+              className="text-xs font-medium rounded-sm border-slate-300 h-9 flex-1 sm:flex-none"
             >
               <a href={getCalendarUrl()} target="_blank" rel="noreferrer">
+                <CalendarCheck2 className="h-3.5 w-3.5 mr-1 text-amber-600" />
                 <span>Agendar</span>
               </a>
             </Button>
@@ -314,7 +344,7 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="text-xs font-medium rounded-sm border-slate-300 text-slate-700 hover:bg-white h-9 px-4"
+              className="text-xs font-medium rounded-sm border-slate-300 h-9 px-4"
             >
               Cerrar
             </Button>
@@ -327,6 +357,7 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
               className="bg-[#091E3A] hover:bg-[#061528] text-white font-medium text-xs uppercase tracking-wider rounded-sm h-9 px-5 gap-1.5 shadow-sm"
             >
               <span>Ver más</span>
+              <ArrowRight className="h-3.5 w-3.5 text-amber-400" />
             </Button>
           </div>
         </div>

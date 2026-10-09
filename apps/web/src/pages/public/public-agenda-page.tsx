@@ -3,11 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { defensesService } from '../../services/defenses.service';
 import { unitsService } from '../../services/units.service';
-import { holidaysService } from '../../services/holidays.service';
 import { DefenseWithRelations } from '../../types';
 import { StatusBadge } from '../../components/shared/status-badge';
 import { DefenseQuickPreviewModal } from '../../components/shared/defense-quick-preview-modal';
-import { formatDate, formatTime, getModalityLabel, normalizeDateOnly } from '../../lib/utils';
+import { formatDate, formatTime } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import {
@@ -44,12 +43,10 @@ import {
   subDays,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import heroImage from '../../assets/hero.png';
 
 function parseDateParts(dateStr: string) {
   try {
-    const [year, month, day] = normalizeDateOnly(dateStr).split('-').map(Number);
-    if (!year || !month || !day) throw new Error('Fecha inválida');
+    const [year, month, day] = dateStr.split('-').map(Number);
     const date = new Date(year, month - 1, day);
     const dayStr = String(day).padStart(2, '0');
     const monthStr = date.toLocaleString('es-PE', { month: 'short' }).toUpperCase().replace('.', '');
@@ -88,18 +85,6 @@ export const PublicAgendaPage: React.FC = () => {
     queryFn: () => unitsService.getUnits(),
   });
 
-  const holidayYear = currentDate.getFullYear();
-  const { data: holidays = [] } = useQuery({
-    queryKey: ['holidays', holidayYear],
-    queryFn: () => holidaysService.getHolidays(holidayYear),
-    staleTime: 1000 * 60 * 60,
-  });
-
-  const holidaysByDate = useMemo(
-    () => new Map(holidays.map((holiday) => [holiday.date, holiday])),
-    [holidays]
-  );
-
   // Filtered public defenses
   const filteredDefenses = useMemo(() => {
     return defenses.filter((d) => {
@@ -124,10 +109,9 @@ export const PublicAgendaPage: React.FC = () => {
   const defensesByDate = useMemo(() => {
     const map = new Map<string, DefenseWithRelations[]>();
     filteredDefenses.forEach((d) => {
-      const dateKey = normalizeDateOnly(d.scheduled_date);
-      const existing = map.get(dateKey) || [];
+      const existing = map.get(d.scheduled_date) || [];
       existing.push(d);
-      map.set(dateKey, existing);
+      map.set(d.scheduled_date, existing);
     });
     return map;
   }, [filteredDefenses]);
@@ -135,7 +119,7 @@ export const PublicAgendaPage: React.FC = () => {
   // Defenses of the same day as the currently previewed defense
   const sameDayDefensesForPreview = useMemo(() => {
     if (!previewDefense) return [];
-    return (defensesByDate.get(normalizeDateOnly(previewDefense.scheduled_date)) || [])
+    return (defensesByDate.get(previewDefense.scheduled_date) || [])
       .slice()
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
   }, [previewDefense, defensesByDate]);
@@ -211,20 +195,87 @@ export const PublicAgendaPage: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full pb-12 font-sans">
-      {/* Minimal institutional banner: only on the public agenda */}
-      <section
-        className="w-full min-h-[300px] sm:min-h-[380px] lg:min-h-[420px] bg-[#091E3A] border-y border-white/10 text-white px-5 py-10 sm:px-8 relative overflow-hidden shadow-sm flex items-center"
-        style={{ backgroundImage: `linear-gradient(90deg, rgba(9,30,58,0.98) 0%, rgba(9,30,58,0.94) 48%, rgba(9,30,58,0.72) 100%), url(${heroImage})`, backgroundPosition: 'center, right 12% center', backgroundRepeat: 'no-repeat', backgroundSize: 'cover, 360px' }}
-      >
-        <div className="container mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <div>
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight">Agenda de sustentaciones</h1>
-            <p className="text-sm sm:text-base text-slate-200 mt-5 max-w-2xl leading-relaxed">Consulta las fechas, horarios, modalidades y espacios de las sustentaciones de tesis y defensas de grado programadas por la Escuela de Postgrado de la Universidad Nacional de la Amazonía Peruana.</p>
+      {/* Institutional Hero Banner */}
+      <section className="bg-[#091E3A] border border-[#091E3A] text-white p-6 sm:p-8 relative overflow-hidden rounded-sm shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#C59B27]" />
+
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+          <div className="space-y-2.5 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-[#C59B27] text-slate-950 px-2 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wider rounded-sm">
+                UNAP · EPG
+              </span>
+              <span className="border border-slate-700 bg-slate-900/80 text-slate-300 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider rounded-sm">
+                PROGRAMACIÓN PÚBLICA OFICIAL
+              </span>
+              <span className="border border-emerald-500/50 bg-emerald-950/60 text-emerald-300 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider flex items-center gap-1 rounded-sm">
+                <span className="h-1.5 w-1.5 bg-emerald-400 inline-block animate-pulse rounded-full" />
+                EN TIEMPO REAL
+              </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold uppercase text-white tracking-tight leading-tight">
+              Agenda de Sustentaciones
+            </h1>
+
+            <p className="text-xs sm:text-sm text-slate-300 font-normal max-w-2xl leading-relaxed">
+              Registro público y oficial de sustentaciones de tesis de maestría y defensas doctorales de la Escuela de Postgrado de la Universidad Nacional de la Amazonía Peruana.
+            </p>
+          </div>
+
+          {/* Metric KPI Block strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 lg:gap-3 shrink-0">
+            <div className="bg-[#061528] border border-slate-800 p-3 sm:p-3.5 min-w-[110px] rounded-sm">
+              <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                Total Agenda
+              </div>
+              <div className="text-2xl sm:text-3xl font-semibold text-white mt-1 leading-none">
+                {stats.total.toString().padStart(2, '0')}
+              </div>
+              <div className="text-[10px] text-amber-400 mt-1">
+                Actos Académicos
+              </div>
+            </div>
+
+            <div className="bg-[#061528] border border-slate-800 p-3 sm:p-3.5 min-w-[110px] rounded-sm">
+              <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                Confirmadas
+              </div>
+              <div className="text-2xl sm:text-3xl font-semibold text-emerald-400 mt-1 leading-none">
+                {stats.confirmed.toString().padStart(2, '0')}
+              </div>
+              <div className="text-[10px] text-emerald-300 mt-1">
+                Listas para acto
+              </div>
+            </div>
+
+            <div className="bg-[#061528] border border-slate-800 p-3 sm:p-3.5 min-w-[110px] rounded-sm">
+              <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                Presenciales
+              </div>
+              <div className="text-2xl sm:text-3xl font-semibold text-blue-400 mt-1 leading-none">
+                {stats.presencial.toString().padStart(2, '0')}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1">
+                Auditorios UNAP
+              </div>
+            </div>
+
+            <div className="bg-[#061528] border border-slate-800 p-3 sm:p-3.5 min-w-[110px] rounded-sm">
+              <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                Virtual / Híbrida
+              </div>
+              <div className="text-2xl sm:text-3xl font-semibold text-amber-300 mt-1 leading-none">
+                {stats.virtual.toString().padStart(2, '0')}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1">
+                Acceso en línea
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       {/* Control & Filter Strip */}
       <section className="bg-white border border-slate-200 p-4 sm:p-4.5 rounded-sm shadow-sm">
         <div className="flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
@@ -392,9 +443,6 @@ export const PublicAgendaPage: React.FC = () => {
             <span className="flex items-center gap-1.5 px-2 py-0.5 border border-purple-600 bg-purple-50 text-purple-950 font-medium rounded-sm">
               <span className="h-1.5 w-1.5 bg-purple-600 rounded-sm" /> Completada
             </span>
-            <span className="flex items-center gap-1.5 px-2 py-0.5 border border-amber-500 bg-amber-50 text-amber-900 font-medium rounded-sm">
-              <span className="h-1.5 w-1.5 bg-amber-500 rounded-sm" /> Feriado
-            </span>
           </div>
         </section>
       )}
@@ -411,24 +459,23 @@ export const PublicAgendaPage: React.FC = () => {
         </div>
       ) : viewMode === 'month' ? (
         /* 1. MONTH VIEW */
-        <div className="overflow-hidden rounded-xl border border-[#eadfc8] bg-[#fbf6e8] shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
           {/* Day of Week Headers */}
-          <div className="grid grid-cols-7 border-b border-[#eadfc8] bg-[#f7efdc] text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 py-5 min-h-[76px] items-center">
-            <div>Lun</div>
-            <div>Mar</div>
-            <div>Mié</div>
-            <div>Jue</div>
-            <div>Vie</div>
-            <div className="text-[#a66d35]">Sáb</div>
-            <div className="text-[#a66d35]">Dom</div>
+          <div className="grid grid-cols-7 bg-[#091E3A] border-b border-slate-200 text-white text-center text-xs font-medium uppercase tracking-wider py-2.5">
+            <div>Lunes</div>
+            <div>Martes</div>
+            <div>Miércoles</div>
+            <div>Jueves</div>
+            <div>Viernes</div>
+            <div className="text-amber-400">Sábado</div>
+            <div className="text-amber-400">Domingo</div>
           </div>
 
           {/* Month Days 7x5 or 7x6 Grid */}
-          <div className="grid grid-cols-7 auto-rows-[minmax(205px,1fr)] divide-x divide-y divide-[#eadfc8] border-b border-[#eadfc8]">
+          <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-200 border-b border-slate-200">
             {monthDays.map((day) => {
               const dateKey = format(day, 'yyyy-MM-dd');
               const dayDefenses = defensesByDate.get(dateKey) || [];
-              const holiday = holidaysByDate.get(dateKey);
               const isCurrMonth = isSameMonth(day, currentDate);
               const isCurrentDay = isToday(day);
               const isSelected = isSameDay(day, selectedDay);
@@ -439,17 +486,17 @@ export const PublicAgendaPage: React.FC = () => {
                   onClick={() => {
                     setSelectedDay(day);
                   }}
-                    className={`min-h-[205px] sm:min-h-[225px] p-3 sm:p-4 transition-colors flex flex-col justify-between cursor-pointer ${
-                    !isCurrMonth ? 'bg-[#f5eddd]/70 text-slate-400' : holiday ? 'bg-[#fff4d6] text-slate-900' : 'bg-[#fffdf7] text-slate-900'
-                  } ${isCurrentDay ? 'bg-[#fff2c7] ring-2 ring-inset ring-[#c59b27]' : ''} ${
+                  className={`min-h-[110px] sm:min-h-[130px] p-1.5 sm:p-2.5 transition-colors flex flex-col justify-between cursor-pointer ${
+                    !isCurrMonth ? 'bg-slate-50/70 text-slate-400' : 'bg-white text-slate-900'
+                  } ${isCurrentDay ? 'bg-amber-50/40 ring-1 ring-inset ring-amber-400' : ''} ${
                     isSelected ? 'ring-2 ring-inset ring-[#091E3A]' : ''
-                  } hover:bg-[#f8f0df]`}
+                  } hover:bg-slate-100/70`}
                 >
                   {/* Day cell top bar */}
                   <div className="flex items-center justify-between mb-1">
                     <span
-                      className={`text-2xl sm:text-3xl font-semibold leading-none tracking-tight ${
-                        isCurrentDay ? 'text-[#091E3A] font-semibold' : isCurrMonth ? 'text-slate-900' : 'text-slate-400'
+                      className={`text-sm sm:text-base font-medium leading-none ${
+                        isCurrentDay ? 'text-[#091E3A] font-semibold' : isCurrMonth ? 'text-slate-800' : 'text-slate-400'
                       }`}
                     >
                       {format(day, 'd')}
@@ -467,7 +514,7 @@ export const PublicAgendaPage: React.FC = () => {
                           e.stopPropagation();
                           handleOpenPreview(dayDefenses[0]);
                         }}
-                        className="font-mono text-[9px] font-semibold bg-[#091E3A] text-amber-300 px-2 py-1 rounded-full hover:bg-[#061528] transition-colors"
+                        className="font-mono text-[9px] font-medium bg-[#091E3A] text-amber-400 px-1.5 py-0.2 rounded-sm hover:bg-[#061528] transition-colors"
                         title={`${dayDefenses.length} sustentación(es) - Clic para ver vista previa`}
                       >
                         {dayDefenses.length}
@@ -476,23 +523,15 @@ export const PublicAgendaPage: React.FC = () => {
                   </div>
 
                   {/* Day Events list (limited to 3) */}
-                  <div className="space-y-2 my-2">
-                    {holiday && (
-                      <div
-                        className="px-1.5 py-1 text-[10px] sm:text-[11px] font-medium truncate rounded-sm border border-amber-300 bg-amber-100 text-amber-950"
-                        title={holiday.name}
-                      >
-                        Feriado: {holiday.name}
-                      </div>
-                    )}
+                  <div className="space-y-1 my-1">
                     {dayDefenses.slice(0, 3).map((d) => {
                       const student = d.participants?.find((p) => p.participant_type === 'STUDENT');
-                      const statusCard =
+                      const statusBorder =
                         d.status === 'CONFIRMED'
-                          ? 'border-l-emerald-500 bg-emerald-50/80 text-emerald-950'
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
                           : d.status === 'RESCHEDULED'
-                          ? 'border-l-blue-500 bg-blue-50/80 text-blue-950'
-                          : 'border-l-purple-500 bg-purple-50/80 text-purple-950';
+                          ? 'border-blue-300 bg-blue-50 text-blue-950'
+                          : 'border-purple-300 bg-purple-50 text-purple-950';
 
                       return (
                         <div
@@ -501,15 +540,15 @@ export const PublicAgendaPage: React.FC = () => {
                             e.stopPropagation();
                             handleOpenPreview(d);
                           }}
-                          className={`px-2 py-2 text-[10px] sm:text-[11px] font-normal rounded-md border border-slate-200 border-l-4 cursor-pointer hover:-translate-y-0.5 hover:shadow-sm transition-all ${statusCard}`}
+                          className={`px-1.5 py-0.5 text-[10px] sm:text-[11px] font-normal truncate rounded-sm border cursor-pointer hover:opacity-90 flex items-center gap-1 ${statusBorder}`}
                           title={`${d.code}: ${d.title} (Clic para vista previa)`}
                         >
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-mono text-[9px] font-semibold opacity-80 shrink-0">{formatTime(d.start_time).replace(/:\d\d /, ' ')}</span>
-                            <span className="text-[8px] uppercase tracking-wide opacity-70">{getModalityLabel(d.modality)}</span>
-                          </div>
-                          <div className="mt-1 line-clamp-2 font-semibold leading-tight">{d.title}</div>
-                          {student && <div className="mt-1 truncate text-[9px] opacity-75">{student.person.first_name} {student.person.last_name}</div>}
+                          <span className="font-mono text-[9px] font-medium opacity-80 shrink-0">
+                            {formatTime(d.start_time).replace(/:\d\d /, ' ')}
+                          </span>
+                          <span className="truncate">
+                            {student ? `${student.person.first_name} ${student.person.last_name}` : d.code}
+                          </span>
                         </div>
                       );
                     })}
@@ -531,7 +570,7 @@ export const PublicAgendaPage: React.FC = () => {
                   {/* Cell Footer metadata */}
                   <div className="text-[9px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-100">
                     <span className="uppercase text-[8px]">
-                      {dayDefenses.length > 0 ? `${dayDefenses.length} acto(s)` : holiday ? 'Día no laborable' : ''}
+                      {dayDefenses.length > 0 ? `${dayDefenses.length} acto(s)` : ''}
                     </span>
                     {dayDefenses.some((d) => d.modality === 'VIRTUAL' || d.modality === 'HYBRID') && (
                       <Video className="h-3 w-3 text-blue-600 inline" />
@@ -546,7 +585,7 @@ export const PublicAgendaPage: React.FC = () => {
         /* 2. DAILY SCHEDULE VIEW */
         <div className="space-y-4">
           {/* Week Day Selector Strip */}
-          <div className="bg-[#fbf6e8] border border-[#eadfc8] p-3 rounded-xl shadow-sm flex items-center justify-between gap-2 overflow-x-auto">
+          <div className="bg-white border border-slate-200 p-2.5 rounded-sm shadow-sm flex items-center justify-between gap-2 overflow-x-auto">
             <div className="text-xs font-mono font-medium text-slate-500 uppercase tracking-wider px-2 shrink-0 hidden md:block">
               Semana:
             </div>
@@ -566,7 +605,7 @@ export const PublicAgendaPage: React.FC = () => {
                         ? 'border-[#091E3A] bg-[#091E3A] text-white'
                         : isCurrent
                         ? 'border-amber-400 bg-amber-50 text-slate-900'
-                        : 'border-[#eadfc8] bg-[#fffdf7] hover:bg-[#f8f0df] text-slate-800'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800'
                     }`}
                   >
                     <div
@@ -595,24 +634,19 @@ export const PublicAgendaPage: React.FC = () => {
           </div>
 
           {/* Daily Schedule Board */}
-          <div className="bg-[#fffdf7] border border-[#eadfc8] rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
             {/* Day Header Banner */}
-            <div className="bg-[#f7efdc] text-[#091E3A] p-5 sm:p-6 border-b border-[#eadfc8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="bg-[#091E3A] text-white p-4 sm:p-5 border-b border-amber-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                  <div className="text-[11px] font-mono text-[#a66d35] uppercase tracking-wider">
+                <div className="text-[11px] font-mono text-amber-400 uppercase tracking-wider">
                   Cronograma de la Jornada
                 </div>
-                  <h2 className="text-xl sm:text-2xl font-semibold capitalize text-[#091E3A] mt-0.5 leading-snug">
+                <h2 className="text-xl sm:text-2xl font-semibold uppercase text-white mt-0.5 leading-snug">
                   {format(selectedDay, 'EEEE, d MMMM yyyy', { locale: es })}
                 </h2>
               </div>
               <div className="flex items-center gap-2">
-                {holidaysByDate.get(selectedDayKey) && (
-                  <span className="font-mono text-xs font-medium px-2.5 py-1 bg-amber-100 border border-amber-300 text-amber-950 rounded-sm">
-                    Feriado: {holidaysByDate.get(selectedDayKey)?.name}
-                  </span>
-                )}
-                  <span className="font-mono text-xs font-medium px-2.5 py-1 bg-white border border-[#eadfc8] text-slate-700 rounded-full">
+                <span className="font-mono text-xs font-medium px-2.5 py-1 bg-[#061528] border border-slate-700 text-slate-200 rounded-sm">
                   {defensesForSelectedDay.length} Sustentaciones
                 </span>
                 <Button
@@ -666,16 +700,16 @@ export const PublicAgendaPage: React.FC = () => {
                     <div
                       key={defense.id}
                       onClick={() => handleOpenPreview(defense)}
-                      className="mx-3 my-3 rounded-md border border-[#eadfc8] bg-white p-4 sm:p-5 shadow-sm hover:border-[#091E3A]/40 hover:bg-[#fffaf0] hover:shadow-md transition-all cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="p-4 sm:p-5 hover:bg-slate-50 transition-colors cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                     >
                       {/* Left Time Box */}
                       <div className="flex items-center gap-4 lg:w-60 shrink-0 border-b lg:border-b-0 pb-3 lg:pb-0">
-                        <div className="bg-[#F7F1E3] text-[#091E3A] p-3 text-center min-w-[88px] rounded-md border border-[#E7D9B9]">
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Hora</div>
-                          <div className="text-lg font-semibold leading-none text-[#091E3A] mt-2">
+                        <div className="bg-[#091E3A] text-white p-2.5 text-center min-w-[76px] rounded-sm border border-[#091E3A]">
+                          <Clock className="h-3.5 w-3.5 text-amber-400 mx-auto mb-1" />
+                          <div className="text-base font-semibold leading-none text-white">
                             {formatTime(defense.start_time).replace(/:\d\d /, ' ')}
                           </div>
-                          <div className="text-[10px] font-mono text-slate-500 mt-1">
+                          <div className="text-[10px] font-mono text-slate-400 mt-0.5">
                             {defense.estimated_duration_minutes || 120} min
                           </div>
                         </div>
@@ -691,7 +725,7 @@ export const PublicAgendaPage: React.FC = () => {
                             </span>
                           </div>
                           <span className="inline-block border border-slate-200 bg-slate-100 text-slate-700 text-[10px] font-mono uppercase px-1.5 py-0.2 rounded-sm">
-                            {getModalityLabel(defense.modality)}
+                            {defense.modality}
                           </span>
                         </div>
                       </div>
@@ -708,7 +742,7 @@ export const PublicAgendaPage: React.FC = () => {
                           </span>
                         </div>
 
-                        <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-snug hover:text-[#091E3A] transition-colors">
+                        <h3 className="text-sm sm:text-base font-semibold text-slate-900 leading-snug hover:text-[#091E3A] transition-colors">
                           {defense.title}
                         </h3>
 
@@ -788,18 +822,18 @@ export const PublicAgendaPage: React.FC = () => {
                   <article
                     key={defense.id}
                     onClick={() => handleOpenPreview(defense)}
-                    className="bg-[#fffdf7] border border-[#eadfc8] hover:border-[#091E3A]/50 hover:bg-white transition-all cursor-pointer p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5 rounded-xl shadow-sm"
+                    className="bg-white border border-slate-200 hover:border-[#091E3A] transition-colors cursor-pointer p-4 sm:p-4.5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-sm shadow-sm"
                   >
                     {/* Left Date Block */}
                     <div className="flex items-center gap-4 sm:gap-5 border-b lg:border-b-0 lg:border-r border-slate-100 pb-3 lg:pb-0 lg:pr-5 shrink-0">
-                      <div className="bg-[#f7efdc] text-[#091E3A] p-3 text-center min-w-[84px] sm:min-w-[92px] border border-[#eadfc8] rounded-md">
+                      <div className="bg-[#091E3A] text-white p-2.5 text-center min-w-[74px] sm:min-w-[80px] border border-[#091E3A] rounded-sm">
                         <div className="text-[10px] font-mono text-amber-400 uppercase tracking-wider leading-none">
                           {weekdayStr}
                         </div>
-                        <div className="text-3xl sm:text-4xl font-semibold text-[#091E3A] leading-none my-1">
+                        <div className="text-2xl sm:text-3xl font-semibold text-white leading-none my-1">
                           {dayStr}
                         </div>
-                        <div className="text-[11px] font-mono text-slate-500 font-medium leading-none">
+                        <div className="text-[11px] font-mono text-slate-300 font-medium leading-none">
                           {monthStr} {year}
                         </div>
                       </div>
@@ -818,7 +852,7 @@ export const PublicAgendaPage: React.FC = () => {
                           </span>
                         </div>
                         <span className="inline-block border border-slate-200 bg-slate-100 text-slate-700 text-[10px] font-mono uppercase px-1.5 py-0.2 rounded-sm">
-                            {getModalityLabel(defense.modality)}
+                          {defense.modality}
                         </span>
                       </div>
                     </div>
@@ -835,7 +869,7 @@ export const PublicAgendaPage: React.FC = () => {
                         </span>
                       </div>
 
-                        <h3 className="text-base sm:text-lg font-semibold text-slate-900 leading-snug tracking-tight hover:text-[#091E3A] transition-colors">
+                      <h3 className="text-sm sm:text-base font-semibold text-slate-900 leading-snug tracking-tight hover:text-[#091E3A] transition-colors">
                         {defense.title}
                       </h3>
 
@@ -892,8 +926,6 @@ export const PublicAgendaPage: React.FC = () => {
           )}
         </div>
       )}
-
-      </div>
 
       {/* Defense Quick Preview Modal */}
       <DefenseQuickPreviewModal
