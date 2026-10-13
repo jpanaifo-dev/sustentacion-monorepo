@@ -469,6 +469,10 @@ export const PublicDefenseDetailPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="detail-people-table">
+                  <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-stone-200 bg-[#FAF8F5] px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <span>Jurado</span>
+                    <span>Rol</span>
+                  </div>
                   {sortedJurors.map((j) => {
                     const isPresident = j.role === 'PRESIDENT';
                     const isSecretary = j.role === 'SECRETARY';
@@ -476,7 +480,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
                       <div
                         key={j.id}
                         className={`detail-people-table__row py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
-                          isPresident ? 'bg-amber-50/40 -mx-3 px-3 rounded-xs' : ''
+                          isPresident ? 'bg-amber-50/40' : ''
                         }`}
                       >
                         <div className="flex items-center gap-3.5 min-w-0">
