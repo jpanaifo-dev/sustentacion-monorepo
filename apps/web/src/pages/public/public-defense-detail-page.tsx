@@ -230,7 +230,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
       <section className="recuerdos-page detail-editorial-banner" aria-labelledby="defense-title">
         <div className="recuerdos-shell">
           <aside className="recuerdos-rail" aria-label="Detalle de sustentación">
-            <span className="recuerdos-rail__word">defensa</span>
+            <span className="recuerdos-rail__word">sustentación</span>
             <span className="recuerdos-rail__meta">{dateParts.dayStr} · {dateParts.year}</span>
           </aside>
 

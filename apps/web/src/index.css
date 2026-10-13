@@ -152,6 +152,9 @@
 
 .detail-editorial-banner .recuerdos-shell {
   min-height: 0;
+  max-width: 1720px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .detail-editorial-banner .recuerdos-content {
@@ -171,7 +174,7 @@
 .detail-editorial-banner .recuerdos-intro h1 {
   max-width: 850px;
   margin: 0;
-  font-size: clamp(2rem, 4vw, 4.4rem);
+  font-size: clamp(1.75rem, 3.2vw, 3.6rem);
   line-height: .98;
   letter-spacing: -.075em;
   overflow-wrap: anywhere;
