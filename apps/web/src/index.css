@@ -155,8 +155,8 @@
 }
 
 .detail-editorial-banner .recuerdos-content {
-  padding-top: 58px;
-  padding-bottom: 30px;
+  padding-top: 34px;
+  padding-bottom: 22px;
 }
 
 .detail-editorial-banner .recuerdos-intro {
@@ -169,18 +169,18 @@
 }
 
 .detail-editorial-banner .recuerdos-intro h1 {
-  max-width: 980px;
+  max-width: 850px;
   margin: 0;
-  font-size: clamp(2.4rem, 5.2vw, 6rem);
-  line-height: .94;
+  font-size: clamp(2rem, 4vw, 4.4rem);
+  line-height: .98;
   letter-spacing: -.075em;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
 .detail-editorial-banner .recuerdos-intro__aside {
-  flex: 0 1 280px;
-  padding-top: 2.3rem;
+  flex: 0 1 245px;
+  padding-top: 1.2rem;
 }
 
 .detail-editorial-meta {
@@ -379,7 +379,7 @@
   .recuerdos-intro__aside { max-width: 460px; }
   .recuerdo-card:nth-child(n) { grid-column: span 6; }
   .agenda-editorial-banner .recuerdos-content { padding-top: 42px; }
-  .detail-editorial-banner .recuerdos-content { padding-top: 42px; }
+  .detail-editorial-banner .recuerdos-content { padding-top: 30px; padding-bottom: 18px; }
   .detail-editorial-banner .recuerdos-intro { flex-direction: column; }
   .detail-editorial-banner .recuerdos-intro__aside { padding-top: 0; max-width: 460px; }
 }
@@ -394,7 +394,7 @@
   .recuerdo-card--featured { grid-row: span 4 !important; }
   .recuerdos-footer { flex-direction: column; gap: .6rem; }
   .agenda-editorial-banner .recuerdos-content { padding: 42px 0 24px; }
-  .detail-editorial-banner .recuerdos-content { padding: 42px 0 24px; }
+  .detail-editorial-banner .recuerdos-content { padding: 30px 0 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
