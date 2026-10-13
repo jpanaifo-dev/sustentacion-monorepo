@@ -314,7 +314,7 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
             {jurors.length === 0 ? (
               <p className="text-xs text-slate-500">Jurado en proceso de ratificación oficial.</p>
             ) : (
-              <div className="overflow-hidden rounded-md border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-px bg-slate-200 text-xs pt-0">
+              <div className="overflow-hidden rounded-md border border-slate-200 grid grid-cols-1 gap-px bg-slate-200 text-xs pt-0">
                 {jurors.map((j) => (
                   <div key={j.id} className="p-3 bg-white flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2 font-medium text-slate-900 truncate">
@@ -331,15 +331,24 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
           </div>
 
           {/* Asesores */}
-          {advisors.length > 0 && (
-            <div className="text-xs text-slate-600 bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2">
-              <span className="font-medium text-slate-900">Asesores:</span>
-              <span className="flex items-center gap-1.5 text-base">
-                {advisors.slice(0, 2).map((advisor) => <PersonAvatar key={advisor.id} person={advisor.person} className="h-8 w-8" />)}
-                {advisors.map((a) => `${a.person.first_name} ${a.person.last_name}`).join(', ')}
-              </span>
-            </div>
-          )}
+          <div className="border border-slate-200 bg-white rounded-md p-3.5 space-y-2">
+            <div className="text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">Asesores</div>
+            {advisors.length === 0 ? (
+              <p className="text-xs text-slate-500">Asesoría por confirmar en el expediente.</p>
+            ) : (
+              <div className="overflow-hidden rounded-md border border-slate-200">
+                {advisors.map((advisor) => (
+                  <div key={advisor.id} className="flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-3 text-xs last:border-b-0">
+                    <PersonAvatar person={advisor.person} />
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-slate-900">{advisor.person.first_name} {advisor.person.last_name}</p>
+                      {advisor.person.email && <p className="mt-0.5 truncate text-[11px] font-mono text-slate-500">{advisor.person.email}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Modal Bottom Action Footer with "Ver más" */}
