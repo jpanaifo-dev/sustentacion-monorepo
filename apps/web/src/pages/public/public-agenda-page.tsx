@@ -299,18 +299,19 @@ export const PublicAgendaPage: React.FC = () => {
   const [selectedModality, setSelectedModality] = useState<string>(searchParams.get('modality') || 'ALL');
   const [previewDefense, setPreviewDefense] = useState<DefenseWithRelations | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const safeSelectedDay = Number.isNaN(selectedDay.getTime()) ? new Date() : selectedDay;
 
   // Keep the complete public agenda state shareable and restorable from the URL.
   useEffect(() => {
     const params = new URLSearchParams();
     params.set('view', viewMode);
     params.set('month', format(currentDate, 'yyyy-MM'));
-    if (viewMode === 'day') params.set('day', format(selectedDay, 'yyyy-MM-dd'));
+    if (viewMode === 'day') params.set('day', format(safeSelectedDay, 'yyyy-MM-dd'));
     if (search.trim()) params.set('q', search.trim());
     if (selectedUnit !== 'ALL') params.set('unit', selectedUnit);
     if (selectedModality !== 'ALL') params.set('modality', selectedModality);
     setSearchParams(params, { replace: true });
-  }, [viewMode, currentDate, selectedDay, search, selectedUnit, selectedModality, setSearchParams]);
+  }, [viewMode, currentDate, safeSelectedDay, search, selectedUnit, selectedModality, setSearchParams]);
 
   const handleOpenPreview = (def: DefenseWithRelations) => {
     setPreviewDefense(def);
@@ -467,7 +468,7 @@ export const PublicAgendaPage: React.FC = () => {
   }, [currentDate]);
 
   // Defenses on selected day for "Diario" view
-  const selectedDayKey = format(selectedDay, 'yyyy-MM-dd');
+  const selectedDayKey = format(safeSelectedDay, 'yyyy-MM-dd');
   const defensesForSelectedDay = useMemo(() => {
     const list = defensesByDate.get(selectedDayKey) || [];
     return [...list].sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -475,10 +476,10 @@ export const PublicAgendaPage: React.FC = () => {
 
   // Selected week days for daily toolbar
   const weekDaysForDailyView = useMemo(() => {
-    const start = startOfWeek(selectedDay, { weekStartsOn: 1 });
-    const end = endOfWeek(selectedDay, { weekStartsOn: 1 });
+    const start = startOfWeek(safeSelectedDay, { weekStartsOn: 1 });
+    const end = endOfWeek(safeSelectedDay, { weekStartsOn: 1 });
     return eachDayOfInterval({ start, end });
-  }, [selectedDay]);
+  }, [safeSelectedDay]);
 
   return (
     <div className="space-y-6 w-full pb-16 font-sans">
@@ -661,7 +662,7 @@ export const PublicAgendaPage: React.FC = () => {
               <div className="text-lg sm:text-xl font-bold text-[#091E3A] uppercase tracking-tight">
                 {viewMode === 'month'
                   ? format(currentDate, 'MMMM yyyy', { locale: es })
-                  : format(selectedDay, 'EEEE, d MMMM yyyy', { locale: es })}
+                  : format(safeSelectedDay, 'EEEE, d MMMM yyyy', { locale: es })}
               </div>
               <div className="text-[11px] text-slate-500 font-normal mt-0.5">
                 {viewMode === 'month'
@@ -723,7 +724,7 @@ export const PublicAgendaPage: React.FC = () => {
                   const holiday = holidaysByDate.get(dateKey);
                   const isCurrMonth = isSameMonth(day, currentDate);
                   const isCurrentDay = isToday(day);
-                  const isSelected = isSameDay(day, selectedDay);
+                  const isSelected = isSameDay(day, safeSelectedDay);
 
                   return (
                     <div
@@ -862,13 +863,13 @@ export const PublicAgendaPage: React.FC = () => {
               <div className="flex items-baseline justify-between mb-3 px-1">
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-slate-950">
-                    {format(selectedDay, 'dd')}
+                    {format(safeSelectedDay, 'dd')}
                   </span>
                   <span className="text-sm font-bold uppercase text-rose-600">
-                    {format(selectedDay, 'EEEE', { locale: es })}
+                    {format(safeSelectedDay, 'EEEE', { locale: es })}
                   </span>
                   <span className="text-xs text-slate-400 font-medium">
-                    {format(selectedDay, 'MMMM yyyy', { locale: es })}
+                    {format(safeSelectedDay, 'MMMM yyyy', { locale: es })}
                   </span>
                 </div>
                 <button
@@ -881,7 +882,7 @@ export const PublicAgendaPage: React.FC = () => {
 
               {defensesForSelectedDay.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-xs text-slate-500">
-                  No hay sustentaciones programadas para el {format(selectedDay, 'd MMMM', { locale: es })}.
+                  No hay sustentaciones programadas para el {format(safeSelectedDay, 'd MMMM', { locale: es })}.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -905,7 +906,7 @@ export const PublicAgendaPage: React.FC = () => {
             <div className="bg-white border border-slate-200/90 p-2 sm:p-2.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               {weekDaysForDailyView.map((day) => {
                 const dayKey = format(day, 'yyyy-MM-dd');
-                const isSelected = isSameDay(day, selectedDay);
+                const isSelected = isSameDay(day, safeSelectedDay);
                 const isCurrent = isToday(day);
                 const count = (defensesByDate.get(dayKey) || []).length;
 
@@ -943,12 +944,12 @@ export const PublicAgendaPage: React.FC = () => {
                 {/* Maximalist Date Elements */}
                 <div className="flex items-baseline sm:items-center gap-4">
                   <span className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tighter text-slate-950 leading-none select-none">
-                    {format(selectedDay, 'dd')}
+                    {format(safeSelectedDay, 'dd')}
                   </span>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-base sm:text-lg font-bold uppercase tracking-wider text-rose-600">
-                        {format(selectedDay, 'EEEE', { locale: es })}
+                        {format(safeSelectedDay, 'EEEE', { locale: es })}
                       </span>
                       {holidaysByDate.get(selectedDayKey) && (
                         <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
@@ -957,7 +958,7 @@ export const PublicAgendaPage: React.FC = () => {
                       )}
                     </div>
                     <div className="text-xs sm:text-sm text-slate-500 font-medium capitalize mt-0.5">
-                      {format(selectedDay, 'd MMMM yyyy', { locale: es })}
+                      {format(safeSelectedDay, 'd MMMM yyyy', { locale: es })}
                     </div>
                     <div className="text-xs text-slate-400 font-mono mt-0.5">
                       {defensesForSelectedDay.length} {defensesForSelectedDay.length === 1 ? 'sustentación programada' : 'sustentaciones programadas para esta jornada'}
@@ -1114,8 +1115,7 @@ export const PublicAgendaPage: React.FC = () => {
         sameDayDefenses={sameDayDefensesForPreview}
         onSelectDefense={(d) => setPreviewDefense(d)}
         onViewDayTimeline={(dateStr) => {
-          const [year, month, day] = dateStr.split('-').map(Number);
-          setSelectedDay(new Date(year, month - 1, day));
+          setSelectedDay(parseAgendaDay(dateStr, new Date()));
           setViewMode('day');
         }}
       />

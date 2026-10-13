@@ -25,6 +25,7 @@ import {
   Check,
   Layers,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 
 interface DefenseQuickPreviewModalProps {
@@ -63,6 +64,11 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
   const advisors = (defense.participants || []).filter((p) => p.participant_type === 'ADVISOR');
 
   const otherDefensesThisDay = sameDayDefenses.filter((d) => d.id !== defense.id);
+  const currentDefenseIndex = sameDayDefenses.findIndex((d) => d.id === defense.id);
+  const previousDefense = currentDefenseIndex > 0 ? sameDayDefenses[currentDefenseIndex - 1] : null;
+  const nextDefense = currentDefenseIndex >= 0 && currentDefenseIndex < sameDayDefenses.length - 1
+    ? sameDayDefenses[currentDefenseIndex + 1]
+    : null;
 
   const handleShare = () => {
     const url = `${window.location.origin}/agenda/${defense.id}`;
@@ -92,7 +98,7 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl rounded-2xl">
+      <DialogContent className="defense-modal-enter relative h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl rounded-2xl">
         {/* Modal Top Institutional Header */}
         <div className="shrink-0 bg-white text-slate-900 p-5 sm:p-6 lg:px-8 border-b border-slate-200">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2.5">
@@ -147,6 +153,31 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
             <span className="truncate">{defense.unit?.name || 'Escuela de Postgrado UNAP'}</span>
           </div>
         </div>
+
+        {sameDayDefenses.length > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Sustentación anterior"
+              title="Sustentación anterior"
+              disabled={!previousDefense}
+              onClick={() => previousDefense && onSelectDefense?.(previousDefense)}
+              className="absolute left-3 top-1/2 z-20 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-[#091E3A] shadow-lg transition hover:bg-[#091E3A] hover:text-white disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Siguiente sustentación"
+              title="Siguiente sustentación"
+              disabled={!nextDefense}
+              onClick={() => nextDefense && onSelectDefense?.(nextDefense)}
+              className="absolute right-3 top-1/2 z-20 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-[#091E3A] shadow-lg transition hover:bg-[#091E3A] hover:text-white disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </>
+        )}
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-white text-slate-900">
           {/* Multiple defenses on the same day switcher banner */}
@@ -247,15 +278,15 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
           )}
 
           {/* Candidato al Grado */}
-          <div className="border border-slate-200 bg-white rounded-sm p-3.5 space-y-2">
-            <div className="text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">Candidato(s) al Grado (Sustentante)</div>
+          <div className="border border-slate-200 bg-white rounded-md p-3.5 space-y-2">
+            <div className="text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">Sustentantes</div>
 
             {students.length === 0 ? (
               <p className="text-xs text-slate-500">Sustentante por confirmar en el expediente.</p>
             ) : (
-              <div className="space-y-1.5">
+              <div className="overflow-hidden rounded-md border border-slate-200">
                 {students.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between text-xs">
+                  <div key={s.id} className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-3 text-xs last:border-b-0">
                     <div className="flex items-center gap-3 text-base font-semibold text-slate-900">
                       <PersonAvatar person={s.person} />
                       <span>{s.person.first_name} {s.person.last_name}</span>
@@ -272,7 +303,7 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
           </div>
 
           {/* Jurado Calificador */}
-          <div className="border border-slate-200 bg-white rounded-sm p-3.5 space-y-2">
+          <div className="border border-slate-200 bg-white rounded-md p-3.5 space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">
               <span>Jurado Calificador Oficial</span>
               <span className="text-[10px] text-slate-500 font-mono font-normal">
@@ -283,9 +314,9 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
             {jurors.length === 0 ? (
               <p className="text-xs text-slate-500">Jurado en proceso de ratificación oficial.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+              <div className="overflow-hidden rounded-md border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-px bg-slate-200 text-xs pt-0">
                 {jurors.map((j) => (
-                  <div key={j.id} className="p-2 bg-slate-50 border border-slate-200 rounded-sm flex items-center justify-between gap-2">
+                  <div key={j.id} className="p-3 bg-white flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2 font-medium text-slate-900 truncate">
                       <PersonAvatar person={j.person} className="h-9 w-9" />
                       {j.person.first_name} {j.person.last_name}
@@ -299,10 +330,10 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
             )}
           </div>
 
-          {/* Asesor */}
+          {/* Asesores */}
           {advisors.length > 0 && (
-            <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-sm border border-slate-200 flex items-center gap-2">
-              <span className="font-medium text-slate-900">Asesor de Tesis:</span>
+            <div className="text-xs text-slate-600 bg-white p-3 rounded-md border border-slate-200 flex items-center gap-2">
+              <span className="font-medium text-slate-900">Asesores:</span>
               <span className="flex items-center gap-1.5 text-base">
                 {advisors.slice(0, 2).map((advisor) => <PersonAvatar key={advisor.id} person={advisor.person} className="h-8 w-8" />)}
                 {advisors.map((a) => `${a.person.first_name} ${a.person.last_name}`).join(', ')}
