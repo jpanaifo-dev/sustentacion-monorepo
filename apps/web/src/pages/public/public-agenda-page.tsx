@@ -384,15 +384,19 @@ export const PublicAgendaPage: React.FC = () => {
     filteredDefenses.forEach((d) => {
       const key = normalizeDateOnly(d.scheduled_date);
       if (!key) return;
-      // In list view, the month from the URL acts as the starting point.
-      // This keeps shared links from showing dates before the selected period.
-      if (key < listStartDate) return;
       const list = map.get(key) || [];
       list.push(d);
       map.set(key, list);
     });
 
-    const sortedKeys = Array.from(map.keys()).sort();
+    // Keep every record visible: upcoming dates have priority and past dates
+    // are placed at the end, with the most recent past date first.
+    const sortedKeys = Array.from(map.keys()).sort((a, b) => {
+      const aIsPast = a < listStartDate;
+      const bIsPast = b < listStartDate;
+      if (aIsPast !== bIsPast) return aIsPast ? 1 : -1;
+      return aIsPast ? b.localeCompare(a) : a.localeCompare(b);
+    });
 
     sortedKeys.forEach((key) => {
       const [year, month, day] = key.split('-').map(Number);
