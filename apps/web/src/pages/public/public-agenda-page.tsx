@@ -371,10 +371,14 @@ export const PublicAgendaPage: React.FC = () => {
   const groupedDefensesByDate = useMemo(() => {
     const groups: { dateKey: string; date: Date; defenses: DefenseWithRelations[] }[] = [];
     const map = new Map<string, DefenseWithRelations[]>();
+    const listStartDate = format(startOfMonth(currentDate), 'yyyy-MM-dd');
 
     filteredDefenses.forEach((d) => {
       const key = normalizeDateOnly(d.scheduled_date);
       if (!key) return;
+      // In list view, the month from the URL acts as the starting point.
+      // This keeps shared links from showing dates before the selected period.
+      if (key < listStartDate) return;
       const list = map.get(key) || [];
       list.push(d);
       map.set(key, list);
@@ -394,7 +398,7 @@ export const PublicAgendaPage: React.FC = () => {
     });
 
     return groups;
-  }, [filteredDefenses]);
+  }, [filteredDefenses, currentDate]);
 
   // Defenses of the same day as the currently previewed defense
   const sameDayDefensesForPreview = useMemo(() => {
