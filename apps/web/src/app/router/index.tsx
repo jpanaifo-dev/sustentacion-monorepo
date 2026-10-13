@@ -6,6 +6,7 @@ import { AdminLayout } from '../layouts/admin-layout';
 import { PublicAgendaPage } from '../../pages/public/public-agenda-page';
 import { PublicDefenseDetailPage } from '../../pages/public/public-defense-detail-page';
 import { PublicInfrastructurePage } from '../../pages/public/public-infrastructure-page';
+import { PublicMemoriesPage } from '../../pages/public/public-memories-page';
 import { DashboardPage } from '../../pages/private/dashboard-page';
 import { AgendaCalendarPage } from '../../pages/private/agenda/agenda-calendar-page';
 import { DefensesListPage } from '../../pages/private/defenses/defenses-list-page';
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
       {
         path: 'infraestructura',
         element: <PublicInfrastructurePage />,
+      },
+      {
+        path: 'recuerdos',
+        element: <PublicMemoriesPage />,
       },
     ],
   },

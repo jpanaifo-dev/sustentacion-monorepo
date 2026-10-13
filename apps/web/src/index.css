@@ -103,6 +103,218 @@
   font-family: "Poppins", sans-serif;
 }
 
+/* Public visual archive: editorial grid inspired by a printed memory board. */
+.recuerdos-page {
+  --recuerdos-paper: #f7f1e5;
+  --recuerdos-ink: #0b172d;
+  --recuerdos-brick: #b62f2f;
+  background: var(--recuerdos-paper);
+  color: var(--recuerdos-ink);
+  overflow: hidden;
+  font-family: "Poppins", sans-serif;
+}
+
+.recuerdos-shell {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  max-width: 1520px;
+  margin: 0 auto;
+  min-height: 860px;
+  padding: 0 28px;
+}
+
+.recuerdos-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border-right: 1px solid rgba(11, 23, 45, .16);
+  padding: 72px 0 28px;
+}
+
+.recuerdos-rail__word {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: var(--recuerdos-brick);
+  font-size: clamp(2.6rem, 5vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -.08em;
+  line-height: .8;
+}
+
+.recuerdos-rail__meta {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: "JetBrains Mono", monospace;
+  font-size: .58rem;
+  letter-spacing: .18em;
+  opacity: .58;
+}
+
+.recuerdos-content {
+  min-width: 0;
+  padding: 70px 0 28px 38px;
+}
+
+.recuerdos-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.recuerdos-kicker,
+.recuerdos-index,
+.recuerdos-footer {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .63rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.recuerdos-kicker {
+  margin: 0 0 1.3rem;
+  color: var(--recuerdos-brick);
+  font-weight: 700;
+}
+
+.recuerdos-intro h1 {
+  margin: 0;
+  font-size: clamp(3rem, 7vw, 7.2rem);
+  line-height: .86;
+  letter-spacing: -.08em;
+  font-weight: 800;
+}
+
+.recuerdos-intro h1 em {
+  color: var(--recuerdos-brick);
+  font-style: normal;
+}
+
+.recuerdos-intro__aside {
+  max-width: 290px;
+  padding-bottom: .35rem;
+}
+
+.recuerdos-intro__aside p {
+  margin: 0 0 1.4rem;
+  font-size: .9rem;
+  line-height: 1.55;
+  color: rgba(11, 23, 45, .72);
+}
+
+.recuerdos-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--recuerdos-ink);
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  text-decoration: none;
+  border-bottom: 2px solid var(--recuerdos-brick);
+  padding-bottom: .3rem;
+  transition: color .2s ease, gap .2s ease;
+}
+
+.recuerdos-link:hover { color: var(--recuerdos-brick); gap: .55rem; }
+.recuerdos-link svg { width: 1rem; height: 1rem; }
+
+.recuerdos-rule {
+  height: 3px;
+  margin: 2.3rem 0 1rem;
+  background: var(--recuerdos-ink);
+}
+
+.recuerdos-index,
+.recuerdos-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: rgba(11, 23, 45, .55);
+}
+
+.recuerdos-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 120px;
+  gap: 14px;
+  margin-top: 1rem;
+}
+
+.recuerdo-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  overflow: hidden;
+  padding: 20px;
+  border-top: 3px solid currentColor;
+  isolation: isolate;
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease;
+}
+
+.recuerdo-card:hover { transform: translateY(-7px); box-shadow: 0 18px 32px rgba(11, 23, 45, .17); z-index: 2; }
+.recuerdo-card--featured { grid-row: span 4; }
+.recuerdo-card:not(.recuerdo-card--featured) { grid-row: span 3; }
+.recuerdo-card:nth-child(1) { grid-column: span 5; }
+.recuerdo-card:nth-child(2) { grid-column: span 3; }
+.recuerdo-card:nth-child(3) { grid-column: span 4; }
+.recuerdo-card:nth-child(4) { grid-column: span 3; }
+.recuerdo-card:nth-child(5) { grid-column: span 5; }
+.recuerdo-card:nth-child(6) { grid-column: span 4; }
+
+.recuerdo-card--brick { background: var(--recuerdos-brick); color: #fffaf0; }
+.recuerdo-card--paper { background: #fffaf0; color: var(--recuerdos-ink); }
+.recuerdo-card--navy { background: #122544; color: #f7f1e5; }
+.recuerdo-card--gold { background: #d7b24b; color: var(--recuerdos-ink); }
+.recuerdo-card--image { background: #233d39; color: #fffaf0; }
+.recuerdo-card--ink { background: var(--recuerdos-ink); color: #fffaf0; }
+
+.recuerdo-card__image,
+.recuerdo-card__veil { position: absolute; inset: 0; width: 100%; height: 100%; }
+.recuerdo-card__image { z-index: -2; object-fit: cover; filter: grayscale(1) contrast(1.25); opacity: .72; transition: transform .6s ease, filter .6s ease; }
+.recuerdo-card:hover .recuerdo-card__image { transform: scale(1.07); filter: grayscale(.25) contrast(1.15); }
+.recuerdo-card__veil { z-index: -1; background: linear-gradient(135deg, rgba(182, 47, 47, .85), rgba(11, 23, 45, .35) 75%); }
+.recuerdo-card--navy .recuerdo-card__veil { background: rgba(11, 23, 45, .67); }
+.recuerdo-card__top, .recuerdo-card__body, .recuerdo-card__line { position: relative; z-index: 1; }
+.recuerdo-card__top { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+.recuerdo-card__number { font-size: clamp(2rem, 4vw, 4.5rem); font-weight: 800; letter-spacing: -.08em; line-height: .8; }
+.recuerdo-card__label { max-width: 58%; text-align: right; font-family: "JetBrains Mono", monospace; font-size: .56rem; line-height: 1.3; text-transform: uppercase; letter-spacing: .08em; opacity: .78; }
+.recuerdo-card__body h2 { max-width: 620px; margin: 0 0 .55rem; font-size: clamp(1.2rem, 2.2vw, 2.25rem); line-height: .98; letter-spacing: -.055em; font-weight: 800; }
+.recuerdo-card__body p { max-width: 440px; margin: 0; font-size: .76rem; line-height: 1.5; opacity: .76; }
+.recuerdo-card__line { width: 42px; height: 3px; background: currentColor; opacity: .75; }
+
+.recuerdos-footer { margin-top: 2.8rem; padding-top: 1rem; border-top: 1px solid rgba(11, 23, 45, .2); }
+.recuerdo-reveal { animation: recuerdo-reveal .75s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes recuerdo-reveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 900px) {
+  .recuerdos-shell { grid-template-columns: 48px minmax(0, 1fr); padding: 0 16px; }
+  .recuerdos-content { padding-left: 20px; }
+  .recuerdos-intro { align-items: flex-start; flex-direction: column; }
+  .recuerdos-intro__aside { max-width: 460px; }
+  .recuerdo-card:nth-child(n) { grid-column: span 6; }
+}
+
+@media (max-width: 560px) {
+  .recuerdos-shell { grid-template-columns: 1fr; padding: 0 14px; }
+  .recuerdos-rail { display: none; }
+  .recuerdos-content { padding: 46px 0 24px; }
+  .recuerdos-intro h1 { font-size: clamp(3.3rem, 18vw, 5rem); }
+  .recuerdos-grid { grid-auto-rows: 150px; }
+  .recuerdo-card:nth-child(n) { grid-column: span 12; grid-row: span 3; }
+  .recuerdo-card--featured { grid-row: span 4 !important; }
+  .recuerdos-footer { flex-direction: column; gap: .6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recuerdo-reveal { animation: none; }
+  .recuerdo-card, .recuerdo-card__image, .recuerdos-link { transition: none; }
+}
+
 @layer utilities {
   .font-anton {
     font-family: "Poppins", sans-serif;

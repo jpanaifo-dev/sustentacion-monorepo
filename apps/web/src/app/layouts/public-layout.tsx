@@ -58,6 +58,7 @@ export const PublicLayout: React.FC = () => {
             <h2 className="font-semibold text-white text-sm mb-4">Enlaces de la aplicación</h2>
             <nav className="space-y-3 flex flex-col">
               <NavLink to="/agenda" className="hover:text-amber-400 transition-colors">Agenda pública</NavLink>
+              <NavLink to="/recuerdos" className="hover:text-amber-400 transition-colors">Recuerdos EPG</NavLink>
               <NavLink to="/admin/login" className="hover:text-amber-400 transition-colors">Acceso administrativo</NavLink>
               <a href="#top" className="hover:text-amber-400 transition-colors">Volver arriba</a>
             </nav>
