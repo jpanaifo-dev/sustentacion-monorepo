@@ -191,10 +191,6 @@ const DefenseMinimalCard: React.FC<DefenseMinimalCardProps> = ({
             {statusConfig.label}
           </span>
 
-          {/* Monospace Code (normal text, NO BADGE) */}
-          <span className="text-xs font-mono text-slate-400 font-medium">
-            #{defense.code}
-          </span>
         </div>
 
         {/* Avatars on top right */}
@@ -241,16 +237,16 @@ const DefenseMinimalCard: React.FC<DefenseMinimalCardProps> = ({
           )}
 
           {/* Venue / Modality */}
-          <div className="flex items-center gap-1.5 text-slate-500">
+          <div className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-slate-700">
             {defense.modality === 'VIRTUAL' ? (
               <>
                 <Video className="h-4 w-4 text-blue-500 shrink-0" />
-                <span className="font-medium">Virtual</span>
+                <span className="font-semibold text-[#091E3A]">Virtual</span>
               </>
             ) : (
               <>
                 <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
-                <span className="truncate max-w-[220px] font-medium">{defense.space?.name || getModalityLabel(defense.modality)}</span>
+                <span className="truncate max-w-[220px] font-semibold text-[#091E3A]">{defense.space?.name || getModalityLabel(defense.modality)}</span>
               </>
             )}
           </div>
@@ -598,7 +594,6 @@ export const PublicAgendaPage: React.FC = () => {
               <button
                 onClick={() => {
                   setViewMode('day');
-                  setSelectedDay(currentDate);
                 }}
                 className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all rounded-lg ${
                   viewMode === 'day'
