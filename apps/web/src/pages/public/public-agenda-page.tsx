@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { defensesService } from '../../services/defenses.service';
 import { unitsService } from '../../services/units.service';
@@ -267,15 +268,45 @@ const DefenseMinimalCard: React.FC<DefenseMinimalCardProps> = ({
 
 type ViewMode = 'month' | 'day' | 'list';
 
+function parseAgendaMonth(value: string | null): Date {
+  if (!value || !/^\d{4}-\d{2}$/.test(value)) return new Date();
+  const [year, month] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, 1);
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
+function parseAgendaDay(value: string | null, fallback: Date): Date {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return fallback;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? fallback : date;
+}
+
 export const PublicAgendaPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [selectedDay, setSelectedDay] = useState<Date>(new Date());
-  const [search, setSearch] = useState('');
-  const [selectedUnit, setSelectedUnit] = useState<string>('ALL');
-  const [selectedModality, setSelectedModality] = useState<string>('ALL');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialMonth = parseAgendaMonth(searchParams.get('month'));
+  const initialDay = parseAgendaDay(searchParams.get('day'), initialMonth);
+  const initialView = searchParams.get('view');
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView === 'day' || initialView === 'list' ? initialView : 'month');
+  const [currentDate, setCurrentDate] = useState<Date>(initialMonth);
+  const [selectedDay, setSelectedDay] = useState<Date>(initialDay);
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [selectedUnit, setSelectedUnit] = useState<string>(searchParams.get('unit') || 'ALL');
+  const [selectedModality, setSelectedModality] = useState<string>(searchParams.get('modality') || 'ALL');
   const [previewDefense, setPreviewDefense] = useState<DefenseWithRelations | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
+  // Keep the complete public agenda state shareable and restorable from the URL.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('view', viewMode);
+    params.set('month', format(currentDate, 'yyyy-MM'));
+    if (viewMode === 'day') params.set('day', format(selectedDay, 'yyyy-MM-dd'));
+    if (search.trim()) params.set('q', search.trim());
+    if (selectedUnit !== 'ALL') params.set('unit', selectedUnit);
+    if (selectedModality !== 'ALL') params.set('modality', selectedModality);
+    setSearchParams(params, { replace: true });
+  }, [viewMode, currentDate, selectedDay, search, selectedUnit, selectedModality, setSearchParams]);
 
   const handleOpenPreview = (def: DefenseWithRelations) => {
     setPreviewDefense(def);
