@@ -284,8 +284,12 @@ function parseAgendaDay(value: string | null, fallback: Date): Date {
 
 export const PublicAgendaPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialMonth = parseAgendaMonth(searchParams.get('month'));
-  const initialDay = parseAgendaDay(searchParams.get('day'), initialMonth);
+  const today = new Date();
+  const initialMonth = searchParams.get('month') ? parseAgendaMonth(searchParams.get('month')) : today;
+  const initialDayFallback = format(initialMonth, 'yyyy-MM') === format(today, 'yyyy-MM') ? today : initialMonth;
+  const initialDay = searchParams.get('day')
+    ? parseAgendaDay(searchParams.get('day'), initialDayFallback)
+    : initialDayFallback;
   const initialView = searchParams.get('view');
   const [viewMode, setViewMode] = useState<ViewMode>(initialView === 'day' || initialView === 'list' ? initialView : 'month');
   const [currentDate, setCurrentDate] = useState<Date>(initialMonth);
@@ -371,7 +375,11 @@ export const PublicAgendaPage: React.FC = () => {
   const groupedDefensesByDate = useMemo(() => {
     const groups: { dateKey: string; date: Date; defenses: DefenseWithRelations[] }[] = [];
     const map = new Map<string, DefenseWithRelations[]>();
-    const listStartDate = format(startOfMonth(currentDate), 'yyyy-MM-dd');
+    const currentMonthKey = format(currentDate, 'yyyy-MM');
+    const todayMonthKey = format(today, 'yyyy-MM');
+    const listStartDate = currentMonthKey === todayMonthKey
+      ? format(today, 'yyyy-MM-dd')
+      : format(startOfMonth(currentDate), 'yyyy-MM-dd');
 
     filteredDefenses.forEach((d) => {
       const key = normalizeDateOnly(d.scheduled_date);
