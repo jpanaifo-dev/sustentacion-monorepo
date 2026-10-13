@@ -153,8 +153,9 @@
 .detail-editorial-banner .recuerdos-shell {
   min-height: 0;
   width: 100%;
-  max-width: none;
-  margin: 0;
+  max-width: 1720px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .detail-editorial-banner .recuerdos-content {
@@ -189,7 +190,7 @@
 .detail-people-table {
   overflow: hidden;
   border: 1px solid rgba(214, 211, 209, .9);
-  border-radius: .125rem;
+  border-radius: .375rem;
   background: #fffdf8;
 }
 

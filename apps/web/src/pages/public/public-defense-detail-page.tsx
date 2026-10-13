@@ -227,7 +227,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
       </div>
 
       {/* 2. Editorial detail banner: the real thesis title is the visual focus. */}
-      <section className="recuerdos-page detail-editorial-banner" aria-labelledby="defense-title">
+      <section className="recuerdos-page detail-editorial-banner w-full" aria-labelledby="defense-title">
         <div className="container mx-auto recuerdos-shell">
           <aside className="recuerdos-rail" aria-label="Detalle de sustentación">
             <span className="recuerdos-rail__word">sustentación</span>
