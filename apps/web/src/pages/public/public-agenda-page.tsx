@@ -435,28 +435,33 @@ export const PublicAgendaPage: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full pb-16 font-sans">
-      {/* Institutional Responsive Hero Banner */}
-      <section
-        className="w-full bg-[#091E3A] border-b border-white/10 text-white px-4 py-8 sm:py-12 lg:py-14 relative overflow-hidden shadow-sm"
-        style={{
-          backgroundImage: `linear-gradient(90deg, rgba(9,30,58,0.98) 0%, rgba(9,30,58,0.94) 55%, rgba(9,30,58,0.75) 100%), url(${heroImage})`,
-          backgroundPosition: 'center, right 10% center',
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: 'cover, 340px',
-        }}
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-amber-400 mb-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              Escuela de Postgrado UNAP
+      {/* Editorial agenda banner, aligned with the visual language of Recuerdos. */}
+      <section className="recuerdos-page agenda-editorial-banner" aria-labelledby="agenda-hero-title">
+        <div className="recuerdos-shell">
+          <aside className="recuerdos-rail" aria-label="Agenda de sustentaciones">
+            <span className="recuerdos-rail__word">agenda</span>
+            <span className="recuerdos-rail__meta">EPG / UNAP</span>
+          </aside>
+
+          <div className="recuerdos-content">
+            <header className="recuerdos-intro recuerdo-reveal">
+              <div>
+                <p className="recuerdos-kicker">AGENDA PÚBLICA · SUSTENTACIONES EPG</p>
+                <h1 id="agenda-hero-title">Fechas que<br /><em>marcan.</em></h1>
+              </div>
+              <div className="recuerdos-intro__aside">
+                <p>Consulta las defensas de tesis, horarios, modalidades y espacios programados por la Escuela de Postgrado.</p>
+                <button type="button" className="recuerdos-link" onClick={() => setViewMode('list')}>
+                  Ver agenda <ArrowRight aria-hidden="true" />
+                </button>
+              </div>
+            </header>
+
+            <div className="recuerdos-rule" aria-hidden="true" />
+            <div className="recuerdos-index recuerdo-reveal" style={{ animationDelay: '120ms' }}>
+              <span>CALENDARIO ACADÉMICO</span>
+              <span>DEFENSAS · TESIS · GRADO</span>
             </div>
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-white">
-              Agenda de sustentaciones
-            </h1>
-            <p className="text-xs sm:text-sm md:text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
-              Consulta las fechas, horarios, modalidades y espacios de las sustentaciones de tesis y defensas de grado programadas por la Escuela de Postgrado.
-            </p>
           </div>
         </div>
       </section>

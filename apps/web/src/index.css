@@ -123,6 +123,33 @@
   padding: 0 28px;
 }
 
+.agenda-editorial-banner .recuerdos-shell {
+  min-height: 0;
+}
+
+.agenda-editorial-banner .recuerdos-content {
+  padding-top: 58px;
+  padding-bottom: 30px;
+}
+
+.agenda-editorial-banner .recuerdos-intro h1 {
+  font-size: clamp(2.8rem, 6.3vw, 6.4rem);
+}
+
+.agenda-editorial-banner .recuerdos-link {
+  border: 0;
+  border-bottom: 2px solid var(--recuerdos-accent);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.agenda-editorial-banner .recuerdos-link svg {
+  transform: rotate(-45deg);
+}
+
 .recuerdos-rail {
   display: flex;
   flex-direction: column;
@@ -297,6 +324,7 @@
   .recuerdos-intro { align-items: flex-start; flex-direction: column; }
   .recuerdos-intro__aside { max-width: 460px; }
   .recuerdo-card:nth-child(n) { grid-column: span 6; }
+  .agenda-editorial-banner .recuerdos-content { padding-top: 42px; }
 }
 
 @media (max-width: 560px) {
@@ -308,6 +336,7 @@
   .recuerdo-card:nth-child(n) { grid-column: span 12; grid-row: span 3; }
   .recuerdo-card--featured { grid-row: span 4 !important; }
   .recuerdos-footer { flex-direction: column; gap: .6rem; }
+  .agenda-editorial-banner .recuerdos-content { padding: 42px 0 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
