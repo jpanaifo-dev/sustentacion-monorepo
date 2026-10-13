@@ -152,9 +152,9 @@
 
 .detail-editorial-banner .recuerdos-shell {
   min-height: 0;
-  max-width: 1720px;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .detail-editorial-banner .recuerdos-content {
@@ -181,15 +181,24 @@
   text-wrap: balance;
 }
 
-.public-detail > main > .grid > :last-child {
-  max-width: 56rem;
-  width: 100%;
-  justify-self: center;
-}
-
 .detail-editorial-banner .recuerdos-intro__aside {
   flex: 0 1 245px;
   padding-top: 1.2rem;
+}
+
+.detail-people-table {
+  overflow: hidden;
+  border: 1px solid rgba(214, 211, 209, .9);
+  border-radius: .125rem;
+  background: #fffdf8;
+}
+
+.detail-people-table__row {
+  border-bottom: 1px solid rgba(214, 211, 209, .8);
+}
+
+.detail-people-table__row:last-child {
+  border-bottom: 0;
 }
 
 .detail-editorial-meta {

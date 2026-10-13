@@ -228,10 +228,9 @@ export const PublicDefenseDetailPage: React.FC = () => {
 
       {/* 2. Editorial detail banner: the real thesis title is the visual focus. */}
       <section className="recuerdos-page detail-editorial-banner" aria-labelledby="defense-title">
-        <div className="recuerdos-shell">
+        <div className="container mx-auto recuerdos-shell">
           <aside className="recuerdos-rail" aria-label="Detalle de sustentación">
             <span className="recuerdos-rail__word">sustentación</span>
-            <span className="recuerdos-rail__meta">{dateParts.dayStr} · {dateParts.year}</span>
           </aside>
 
           <div className="recuerdos-content">
@@ -240,19 +239,14 @@ export const PublicDefenseDetailPage: React.FC = () => {
                 <p className="recuerdos-kicker">DETALLE DE SUSTENTACIÓN · {defense.code}</p>
                 <h1 id="defense-title">{defense.title}</h1>
               </div>
-              <div className="recuerdos-intro__aside">
-                <p>{defense.unit?.name || 'Escuela de Postgrado UNAP'}{defense.program_name ? ` · ${defense.program_name}` : ''}</p>
-                <div className="detail-editorial-meta">
-                  <strong>{dateParts.dayStr} {dateParts.monthStr} {dateParts.year}</strong>
-                  <span>{formatTime(defense.start_time)} · {getModalityLabel(defense.modality)}</span>
+                <div className="recuerdos-intro__aside">
+                  <p>{defense.unit?.name || 'Escuela de Postgrado UNAP'}{defense.program_name ? ` · ${defense.program_name}` : ''}</p>
                 </div>
-              </div>
             </header>
 
             <div className="recuerdos-rule" aria-hidden="true" />
             <div className="recuerdos-index recuerdo-reveal" style={{ animationDelay: '120ms' }}>
-              <span>{dateParts.weekdayFull} · ACTO ACADÉMICO</span>
-              <span>{defense.space?.name || (defense.modality === 'VIRTUAL' ? 'PLATAFORMA VIRTUAL' : 'ESPACIO POR ASIGNAR')}</span>
+              <span>ACTO ACADÉMICO · {defense.code}</span>
             </div>
           </div>
         </div>
@@ -299,13 +293,13 @@ export const PublicDefenseDetailPage: React.FC = () => {
         </section>
       )}
 
-      {/* 5. Main Content Grid (container mx-auto, sin max-w-5xl) */}
-      <main className="container mx-auto max-w-[1720px] px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Aside: sustentantes, asesores, jurados y ficha de programación */}
-          <div className="space-y-6 lg:col-span-4">
+      {/* El banner queda a ancho completo; el ancho máximo se limita al contenido inferior. */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          <main className="min-w-0 space-y-6 lg:col-span-8 lg:max-w-5xl">
+            <div className="min-w-0 space-y-6">
             {/* Card: Sustentantes */}
-            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-5">
+            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-none space-y-5">
               <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 rounded-sm bg-stone-100 border border-stone-200 text-[#091E3A] flex items-center justify-center">
@@ -326,11 +320,11 @@ export const PublicDefenseDetailPage: React.FC = () => {
               {students.length === 0 ? (
                 <p className="text-xs text-slate-500 italic py-2">No se encontraron sustentantes registrados.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="detail-people-table">
                   {students.map((s) => (
                     <div
                       key={s.id}
-                      className="p-4 bg-[#FAF8F5] border border-stone-200/90 rounded-sm space-y-2.5 transition-all hover:border-stone-400"
+                      className="detail-people-table__row p-4 bg-[#FAF8F5] space-y-2.5 transition-all hover:bg-white"
                     >
                       <div className="flex items-center gap-3">
                         <PersonAvatar person={s.person} className="h-11 w-11" />
@@ -362,7 +356,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
 
             {/* Card: Asesor(es) / Dirección de Tesis */}
             {advisors.length > 0 && (
-              <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-5">
+              <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-none space-y-5">
                 <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
                   <div className="flex items-center gap-2.5">
                     <div className="h-8 w-8 rounded-sm bg-stone-100 border border-stone-200 text-[#091E3A] flex items-center justify-center">
@@ -377,11 +371,11 @@ export const PublicDefenseDetailPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="detail-people-table">
                   {advisors.map((a) => (
                     <div
                       key={a.id}
-                      className="p-4 bg-[#FAF8F5] border border-stone-200/90 rounded-sm space-y-2.5 transition-all hover:border-stone-400"
+                      className="detail-people-table__row p-4 bg-[#FAF8F5] space-y-2.5 transition-all hover:bg-white"
                     >
                       <div className="flex items-center gap-3">
                         <PersonAvatar person={a.person} className="h-11 w-11" />
@@ -407,7 +401,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
             )}
 
             {/* Card: Jurados en el resumen lateral */}
-            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-5">
+            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-none space-y-5">
               <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
                 <div>
                   <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
@@ -441,104 +435,12 @@ export const PublicDefenseDetailPage: React.FC = () => {
               )}
             </section>
 
-            {/* Card: Ubicación del Acto Académico */}
-            {defense.space && (
-              <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-4">
-                <div className="flex items-center gap-2.5 border-b border-stone-200 pb-3.5">
-                  <div className="h-8 w-8 rounded-sm bg-stone-100 border border-stone-200 text-[#091E3A] flex items-center justify-center">
-                    <MapPin className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
-                      Sede y Espacio Académico
-                    </h2>
-                    <p className="text-[11px] text-slate-500">Referencia de asistencia presencial</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 text-xs text-slate-700">
-                  <div className="p-3 bg-[#FAF8F5] border border-stone-200 rounded-sm space-y-1.5">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                      Espacio / Aula
-                    </div>
-                    <div className="text-sm font-bold text-[#091E3A]">
-                      {defense.space.name}
-                    </div>
-                    {defense.space.floor && (
-                      <div className="text-slate-600">
-                        Nivel: <span className="font-medium text-slate-900">{defense.space.floor}</span>
-                      </div>
-                    )}
-                    {defense.space.location_reference && (
-                      <div className="text-slate-600 pt-1 border-t border-stone-200 text-[11px]">
-                        Referencia: {defense.space.location_reference}
-                      </div>
-                    )}
-                  </div>
-
-                  {defense.facility?.name && (
-                    <div className="space-y-1">
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        Edificio / Pabellón
-                      </div>
-                      <div className="font-semibold text-slate-900">
-                        {defense.facility.name}
-                      </div>
-                      {defense.facility.address && (
-                        <div className="text-slate-500 text-[11px]">
-                          {defense.facility.address}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {/* Card: horario, sede, ubicación y estado */}
-            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
-                <div>
-                  <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
-                    Programación del acto
-                  </h2>
-                  <p className="text-[11px] text-slate-500">Horario y ubicación oficial</p>
-                </div>
-                {defense.status === 'CONFIRMED' && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-xs">
-                    Verificada
-                  </span>
-                )}
-              </div>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                <div>
-                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Fecha</dt>
-                  <dd className="font-semibold text-[#091E3A] mt-0.5">{dateParts.dayStr} {dateParts.monthStr} {dateParts.year}</dd>
-                </div>
-                <div>
-                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Horario</dt>
-                  <dd className="font-semibold text-[#091E3A] mt-0.5">{formatTime(defense.start_time)}</dd>
-                </div>
-                <div>
-                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Modalidad</dt>
-                  <dd className="font-semibold text-[#091E3A] mt-0.5">{getModalityLabel(defense.modality)}</dd>
-                </div>
-                <div>
-                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Sede</dt>
-                  <dd className="font-semibold text-[#091E3A] mt-0.5 truncate">{defense.facility?.name || 'Escuela de Postgrado UNAP'}</dd>
-                </div>
-                <div className="col-span-2 border-t border-stone-200 pt-3">
-                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Ubicación / espacio</dt>
-                  <dd className="font-semibold text-[#091E3A] mt-0.5">{defense.space?.name || (defense.modality === 'VIRTUAL' ? 'Plataforma virtual' : 'Por asignar')}</dd>
-                </div>
-              </dl>
-            </section>
-          </div>
+            </div>
 
           {/* Body: protocolo y documentación del acto */}
-          <div className="space-y-6 lg:col-span-8">
+            <div className="min-w-0 space-y-6">
             {/* Card: Jurado Calificador Designado */}
-            <section className="hidden bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 sm:p-7 shadow-xs space-y-6">
+            <section className="hidden bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 sm:p-7 shadow-none space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-sm bg-[#091E3A] text-white flex items-center justify-center shrink-0">
@@ -566,14 +468,14 @@ export const PublicDefenseDetailPage: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-stone-200/90">
+                <div className="detail-people-table">
                   {sortedJurors.map((j) => {
                     const isPresident = j.role === 'PRESIDENT';
                     const isSecretary = j.role === 'SECRETARY';
                     return (
                       <div
                         key={j.id}
-                        className={`py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
+                        className={`detail-people-table__row py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
                           isPresident ? 'bg-amber-50/40 -mx-3 px-3 rounded-xs' : ''
                         }`}
                       >
@@ -618,7 +520,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
             </section>
 
             {/* Card: Protocolo Institucional y Fases del Acto */}
-            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 sm:p-7 shadow-xs space-y-5">
+            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 sm:p-7 shadow-none space-y-5">
               <div className="flex items-center gap-2.5 border-b border-stone-200 pb-3.5">
                 <div className="h-8 w-8 rounded-sm bg-stone-100 border border-stone-200 text-[#091E3A] flex items-center justify-center">
                   <BookOpen className="h-4 w-4" />
@@ -676,7 +578,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
 
             {/* Observaciones Específicas / Indicaciones del Comité */}
             {defense.observations && (
-              <section className="bg-[#FFFDF8] border border-amber-300/80 rounded-sm p-6 shadow-xs space-y-3">
+              <section className="bg-[#FFFDF8] border border-amber-300/80 rounded-sm p-6 shadow-none space-y-3">
                 <div className="flex items-center gap-2.5 border-b border-amber-200/70 pb-3">
                   <Info className="h-4 w-4 text-amber-700" />
                   <h2 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
@@ -691,7 +593,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
 
             {/* Historial de Reprogramación (si aplica) */}
             {defense.reschedules && defense.reschedules.length > 0 && (
-              <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-4">
+              <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-none space-y-4">
                 <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-stone-200 pb-2">
                   Historial de Reprogramación Oficial
                 </h2>
@@ -711,9 +613,44 @@ export const PublicDefenseDetailPage: React.FC = () => {
                 </div>
               </section>
             )}
-          </div>
+            </div>
+          </main>
+
+          <aside className="min-w-0 space-y-6 lg:col-span-4 lg:sticky lg:top-24 lg:self-start">
+            {defense.space && (
+              <section className="space-y-4 rounded-sm border border-stone-300/80 bg-[#FFFDF8] p-5 shadow-none">
+                <div className="flex items-center gap-2.5 border-b border-stone-200 pb-3.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-stone-200 bg-stone-100 text-[#091E3A]"><MapPin className="h-4 w-4" /></div>
+                  <div><h2 className="text-xs font-bold uppercase tracking-wider text-[#091E3A]">Sede y espacio</h2><p className="text-[11px] text-slate-500">Ubicación del acto académico</p></div>
+                </div>
+                <div className="space-y-3 text-xs text-slate-700">
+                  <div className="space-y-1.5 rounded-sm border border-stone-200 bg-[#FAF8F5] p-3">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Espacio / aula</div>
+                    <div className="text-sm font-bold text-[#091E3A]">{defense.space.name}</div>
+                    {defense.space.floor && <div>Nivel: <span className="font-medium text-slate-900">{defense.space.floor}</span></div>}
+                    {defense.space.location_reference && <div className="border-t border-stone-200 pt-2 text-[11px]">Referencia: {defense.space.location_reference}</div>}
+                  </div>
+                  {defense.facility?.name && <div className="space-y-1"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Sede / edificio</div><div className="font-semibold text-slate-900">{defense.facility.name}</div>{defense.facility.address && <div className="text-[11px] text-slate-500">{defense.facility.address}</div>}</div>}
+                </div>
+              </section>
+            )}
+
+            <section className="space-y-4 rounded-sm border border-stone-300/80 bg-[#FFFDF8] p-5 shadow-none">
+              <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
+                <div><h2 className="text-xs font-bold uppercase tracking-wider text-[#091E3A]">Programación del acto</h2><p className="text-[11px] text-slate-500">Horario y ubicación oficial</p></div>
+                {defense.status === 'CONFIRMED' && <span className="rounded-xs border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Verificada</span>}
+              </div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-4 text-xs">
+                <div><dt className="text-[10px] uppercase tracking-wider text-slate-500">Fecha</dt><dd className="mt-0.5 font-semibold text-[#091E3A]">{dateParts.dayStr} {dateParts.monthStr} {dateParts.year}</dd></div>
+                <div><dt className="text-[10px] uppercase tracking-wider text-slate-500">Horario</dt><dd className="mt-0.5 font-semibold text-[#091E3A]">{formatTime(defense.start_time)}–{formatTime(defense.estimated_end_time || defense.start_time)}</dd></div>
+                <div><dt className="text-[10px] uppercase tracking-wider text-slate-500">Modalidad</dt><dd className="mt-0.5 font-semibold text-[#091E3A]">{getModalityLabel(defense.modality)}</dd></div>
+                <div><dt className="text-[10px] uppercase tracking-wider text-slate-500">Sede</dt><dd className="mt-0.5 break-words font-semibold text-[#091E3A]">{defense.facility?.name || 'No asignada'}</dd></div>
+                <div className="col-span-2 border-t border-stone-200 pt-3"><dt className="text-[10px] uppercase tracking-wider text-slate-500">Ubicación / espacio</dt><dd className="mt-0.5 font-semibold text-[#091E3A]">{defense.space?.name || (defense.modality === 'VIRTUAL' ? 'Plataforma virtual' : 'Por asignar')}</dd></div>
+              </dl>
+            </section>
+          </aside>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
