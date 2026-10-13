@@ -16,49 +16,49 @@ type MemoryCard = {
 const memories: MemoryCard[] = [
   {
     number: '01',
-    label: 'Investigación · EPG',
-    title: 'Ideas que dejan huella',
-    description: 'Cada sustentación convierte una pregunta en una nueva forma de mirar el futuro.',
+    label: 'Sustentación · EPG',
+    title: 'El inicio de una defensa',
+    description: 'Cada sustentación convierte una investigación en una historia para compartir.',
     variant: 'recuerdo-card--brick',
     image: true,
     featured: true,
   },
   {
     number: '02',
-    label: 'Comunidad académica',
-    title: 'Voces de la investigación',
-    description: 'Historias de esfuerzo, acompañamiento y conocimiento compartido.',
+    label: 'Sustentantes · EPG',
+    title: 'La voz del sustentante',
+    description: 'Trabajo, esfuerzo y conocimiento reunidos en un momento que permanece.',
     variant: 'recuerdo-card--paper',
   },
   {
     number: '03',
-    label: 'Aprendizaje · 2026',
-    title: 'El aula también recuerda',
-    description: 'Encuentros que permanecen más allá de una fecha en el calendario.',
+    label: 'Agenda · 2026',
+    title: 'El momento de compartir',
+    description: 'La agenda reúne fechas, espacios y nuevas oportunidades para la investigación.',
     variant: 'recuerdo-card--navy',
     image: true,
   },
   {
     number: '04',
-    label: 'Escuela de Postgrado',
-    title: 'Una comunidad que crece',
-    description: 'Personas, proyectos y conversaciones que construyen nuestra identidad.',
+    label: 'Jurado académico',
+    title: 'Acompañamiento que impulsa',
+    description: 'La mirada de un jurado también forma parte del camino de cada tesis.',
     variant: 'recuerdo-card--gold',
   },
   {
     number: '05',
-    label: 'Archivo abierto',
-    title: 'Lo que queda por contar',
-    description: 'Una colección viva de momentos que conectan a la EPG con su comunidad.',
+    label: 'Defensas · EPG',
+    title: 'Una agenda de logros',
+    description: 'Cada defensa suma una nueva página a la historia de la Escuela de Postgrado.',
     variant: 'recuerdo-card--image',
     image: true,
     featured: true,
   },
   {
     number: '06',
-    label: 'UNAP · Iquitos',
-    title: 'Seguimos haciendo historia',
-    description: 'El próximo recuerdo puede comenzar con tu investigación.',
+    label: 'Comunidad UNAP',
+    title: 'Seguimos sustentando ideas',
+    description: 'El próximo recuerdo puede comenzar con tu investigación y tu fecha de defensa.',
     variant: 'recuerdo-card--ink',
   },
 ];
@@ -75,11 +75,11 @@ export const PublicMemoriesPage: React.FC = () => {
         <div className="recuerdos-content">
           <header className="recuerdos-intro recuerdo-reveal">
             <div>
-              <p className="recuerdos-kicker">ARCHIVO VISUAL · ESCUELA DE POSTGRADO</p>
-              <h1>Momentos que<br /><em>permanecen.</em></h1>
+              <p className="recuerdos-kicker">ARCHIVO VISUAL · SUSTENTACIONES EPG</p>
+              <h1>Historias que<br /><em>se sustentan.</em></h1>
             </div>
             <div className="recuerdos-intro__aside">
-              <p>Una mirada a las personas, ideas y encuentros que dan vida a nuestra comunidad académica.</p>
+              <p>Una mirada a las investigaciones, personas y momentos que dan vida a la agenda de sustentaciones.</p>
               <Link to="/agenda" className="recuerdos-link">
                 Ver agenda <ArrowUpRight aria-hidden="true" />
               </Link>
@@ -119,7 +119,7 @@ export const PublicMemoriesPage: React.FC = () => {
 
           <footer className="recuerdos-footer recuerdo-reveal" style={{ animationDelay: '760ms' }}>
             <span>ESCUELA DE POSTGRADO UNAP</span>
-            <span>FORMACIÓN · INVESTIGACIÓN · COMUNIDAD</span>
+            <span>SUSTENTACIONES · INVESTIGACIÓN · COMUNIDAD</span>
             <span>© {new Date().getFullYear()}</span>
           </footer>
         </div>

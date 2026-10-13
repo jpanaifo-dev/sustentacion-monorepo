@@ -105,9 +105,9 @@
 
 /* Public visual archive: editorial grid inspired by a printed memory board. */
 .recuerdos-page {
-  --recuerdos-paper: #f7f1e5;
-  --recuerdos-ink: #0b172d;
-  --recuerdos-brick: #b62f2f;
+  --recuerdos-paper: #faf8f5;
+  --recuerdos-ink: #091e3a;
+  --recuerdos-accent: #c59b27;
   background: var(--recuerdos-paper);
   color: var(--recuerdos-ink);
   overflow: hidden;
@@ -135,7 +135,7 @@
 .recuerdos-rail__word {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  color: var(--recuerdos-brick);
+  color: var(--recuerdos-accent);
   font-size: clamp(2.6rem, 5vw, 5rem);
   font-weight: 800;
   letter-spacing: -.08em;
@@ -174,7 +174,7 @@
 
 .recuerdos-kicker {
   margin: 0 0 1.3rem;
-  color: var(--recuerdos-brick);
+  color: var(--recuerdos-accent);
   font-weight: 700;
 }
 
@@ -187,7 +187,7 @@
 }
 
 .recuerdos-intro h1 em {
-  color: var(--recuerdos-brick);
+  color: var(--recuerdos-accent);
   font-style: normal;
 }
 
@@ -213,12 +213,12 @@
   text-transform: uppercase;
   letter-spacing: .08em;
   text-decoration: none;
-  border-bottom: 2px solid var(--recuerdos-brick);
+  border-bottom: 2px solid var(--recuerdos-accent);
   padding-bottom: .3rem;
   transition: color .2s ease, gap .2s ease;
 }
 
-.recuerdos-link:hover { color: var(--recuerdos-brick); gap: .55rem; }
+.recuerdos-link:hover { color: var(--recuerdos-accent); gap: .55rem; }
 .recuerdos-link svg { width: 1rem; height: 1rem; }
 
 .recuerdos-rule {
@@ -266,7 +266,7 @@
 .recuerdo-card:nth-child(5) { grid-column: span 5; }
 .recuerdo-card:nth-child(6) { grid-column: span 4; }
 
-.recuerdo-card--brick { background: var(--recuerdos-brick); color: #fffaf0; }
+.recuerdo-card--brick { background: var(--recuerdos-accent); color: #fffaf0; }
 .recuerdo-card--paper { background: #fffaf0; color: var(--recuerdos-ink); }
 .recuerdo-card--navy { background: #122544; color: #f7f1e5; }
 .recuerdo-card--gold { background: #d7b24b; color: var(--recuerdos-ink); }
@@ -277,7 +277,7 @@
 .recuerdo-card__veil { position: absolute; inset: 0; width: 100%; height: 100%; }
 .recuerdo-card__image { z-index: -2; object-fit: cover; filter: grayscale(1) contrast(1.25); opacity: .72; transition: transform .6s ease, filter .6s ease; }
 .recuerdo-card:hover .recuerdo-card__image { transform: scale(1.07); filter: grayscale(.25) contrast(1.15); }
-.recuerdo-card__veil { z-index: -1; background: linear-gradient(135deg, rgba(182, 47, 47, .85), rgba(11, 23, 45, .35) 75%); }
+.recuerdo-card__veil { z-index: -1; background: linear-gradient(135deg, rgba(197, 155, 39, .86), rgba(9, 30, 58, .45) 75%); }
 .recuerdo-card--navy .recuerdo-card__veil { background: rgba(11, 23, 45, .67); }
 .recuerdo-card__top, .recuerdo-card__body, .recuerdo-card__line { position: relative; z-index: 1; }
 .recuerdo-card__top { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
