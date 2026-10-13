@@ -226,106 +226,33 @@ export const PublicDefenseDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Full-Width Hero Banner (container mx-auto, sin max-w limitante) */}
-      <section className="w-full bg-[#FFFDF8] border-b border-stone-300/80 shadow-xs relative overflow-hidden">
-        {/* Subtle Top Gold Accent Bar */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-[#091E3A] via-[#C59B27] to-[#091E3A]" />
+      {/* 2. Editorial detail banner: the real thesis title is the visual focus. */}
+      <section className="recuerdos-page detail-editorial-banner" aria-labelledby="defense-title">
+        <div className="recuerdos-shell">
+          <aside className="recuerdos-rail" aria-label="Detalle de sustentación">
+            <span className="recuerdos-rail__word">defensa</span>
+            <span className="recuerdos-rail__meta">{dateParts.dayStr} · {dateParts.year}</span>
+          </aside>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-6">
-          {/* Eyebrow / Badges row */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="font-mono text-xs font-bold tracking-wider px-2.5 py-1 bg-[#091E3A] text-white rounded-xs shadow-xs">
-              {defense.code}
-            </span>
-            <StatusBadge status={defense.status} />
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 bg-stone-100 text-stone-800 border border-stone-300 rounded-xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-600" />
-              {getModalityLabel(defense.modality)}
-            </span>
-            {defense.office_number && (
-              <span className="text-[11px] font-mono font-medium text-slate-700 bg-amber-50/80 border border-amber-300/80 px-2.5 py-1 rounded-xs">
-                Oficio / Res: {defense.office_number}
-              </span>
-            )}
-          </div>
+          <div className="recuerdos-content">
+            <header className="recuerdos-intro recuerdo-reveal">
+              <div className="detail-editorial-title">
+                <p className="recuerdos-kicker">DETALLE DE SUSTENTACIÓN · {defense.code}</p>
+                <h1 id="defense-title">{defense.title}</h1>
+              </div>
+              <div className="recuerdos-intro__aside">
+                <p>{defense.unit?.name || 'Escuela de Postgrado UNAP'}{defense.program_name ? ` · ${defense.program_name}` : ''}</p>
+                <div className="detail-editorial-meta">
+                  <strong>{dateParts.dayStr} {dateParts.monthStr} {dateParts.year}</strong>
+                  <span>{formatTime(defense.start_time)} · {getModalityLabel(defense.modality)}</span>
+                </div>
+              </div>
+            </header>
 
-          {/* Unit & Academic Program Subheading (Editorial uppercase tracked style like reference) */}
-          <div className="space-y-1">
-            <div className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#0D6E6E] flex items-center flex-wrap gap-2">
-              <span>{defense.unit?.name || 'Escuela de Postgrado UNAP'}</span>
-              {defense.program_name && (
-                <>
-                  <span className="text-stone-400">·</span>
-                  <span className="text-[#091E3A]">{defense.program_name}</span>
-                </>
-              )}
-            </div>
-
-            {/* Editorial Thesis Title (Poppins) */}
-            <h1 className="font-poppins font-extrabold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#091E3A] tracking-tight leading-[1.18] pt-1">
-              {defense.title}
-            </h1>
-          </div>
-
-          {/* Institutional subline */}
-          <div className="flex items-center gap-2 text-xs text-slate-600 pt-1 font-medium">
-            <Building className="h-4 w-4 text-[#C59B27] shrink-0" />
-            <span>Escuela de Postgrado · Universidad Nacional de la Amazonía Peruana</span>
-          </div>
-
-          {/* 3. Hero Data Callout Strip (Inspired by Reference Image 1 with big numbers and tracked labels) */}
-          <div className="pt-6 sm:pt-8 border-t border-stone-200/90 grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {/* Stat 1: FECHA OFICIAL */}
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-sans text-[#091E3A] tracking-tight flex items-baseline gap-1.5">
-                <span>{dateParts.dayStr}</span>
-                <span className="text-base sm:text-xl font-bold text-slate-600 uppercase">{dateParts.monthStr}</span>
-              </div>
-              <div className="text-[11px] font-bold uppercase tracking-widest text-[#0D6E6E]">
-                FECHA PROGRAMADA
-              </div>
-              <div className="text-xs text-slate-600 capitalize">
-                {dateParts.weekdayFull}, {dateParts.year}
-              </div>
-            </div>
-
-            {/* Stat 2: HORARIO Y TIEMPO */}
-            <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-sans text-[#091E3A] tracking-tight">
-                {formatTime(defense.start_time)}
-              </div>
-              <div className="text-[11px] font-bold uppercase tracking-widest text-[#0D6E6E]">
-                HORA DE INICIO
-              </div>
-              <div className="text-xs text-slate-600">
-                Hasta {formatTime(defense.estimated_end_time)} · {defense.estimated_duration_minutes || 120} min
-              </div>
-            </div>
-
-            {/* Stat 3: MODALIDAD */}
-            <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-sans text-[#091E3A] tracking-tight uppercase">
-                {getModalityLabel(defense.modality)}
-              </div>
-              <div className="text-[11px] font-bold uppercase tracking-widest text-[#0D6E6E]">
-                MODALIDAD DE DEFENSA
-              </div>
-              <div className="text-xs text-slate-600">
-                Acto académico público oficial
-              </div>
-            </div>
-
-            {/* Stat 4: SEDE / ESPACIO */}
-            <div className="space-y-1">
-              <div className="text-lg sm:text-xl lg:text-2xl font-extrabold font-sans text-[#091E3A] tracking-tight truncate" title={defense.space?.name || 'Por definir'}>
-                {defense.space?.name || (defense.modality === 'VIRTUAL' ? 'Plataforma Virtual' : 'Por asignar')}
-              </div>
-              <div className="text-[11px] font-bold uppercase tracking-widest text-[#0D6E6E]">
-                UBICACIÓN ACADÉMICA
-              </div>
-              <div className="text-xs text-slate-600 truncate" title={defense.facility?.name || 'Sede Central EPG'}>
-                {defense.facility?.name || 'Escuela de Postgrado UNAP'}
-              </div>
+            <div className="recuerdos-rule" aria-hidden="true" />
+            <div className="recuerdos-index recuerdo-reveal" style={{ animationDelay: '120ms' }}>
+              <span>{dateParts.weekdayFull} · ACTO ACADÉMICO</span>
+              <span>{defense.space?.name || (defense.modality === 'VIRTUAL' ? 'PLATAFORMA VIRTUAL' : 'ESPACIO POR ASIGNAR')}</span>
             </div>
           </div>
         </div>

@@ -150,6 +150,60 @@
   transform: rotate(-45deg);
 }
 
+.detail-editorial-banner .recuerdos-shell {
+  min-height: 0;
+}
+
+.detail-editorial-banner .recuerdos-content {
+  padding-top: 58px;
+  padding-bottom: 30px;
+}
+
+.detail-editorial-banner .recuerdos-intro {
+  align-items: flex-start;
+}
+
+.detail-editorial-banner .detail-editorial-title {
+  min-width: 0;
+  flex: 1 1 68%;
+}
+
+.detail-editorial-banner .recuerdos-intro h1 {
+  max-width: 980px;
+  margin: 0;
+  font-size: clamp(2.4rem, 5.2vw, 6rem);
+  line-height: .94;
+  letter-spacing: -.075em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.detail-editorial-banner .recuerdos-intro__aside {
+  flex: 0 1 280px;
+  padding-top: 2.3rem;
+}
+
+.detail-editorial-meta {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  border-left: 3px solid var(--recuerdos-accent);
+  padding-left: .8rem;
+  color: var(--recuerdos-ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: .68rem;
+  line-height: 1.45;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.detail-editorial-meta strong {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: -.03em;
+  text-transform: none;
+}
+
 .recuerdos-rail {
   display: flex;
   flex-direction: column;
@@ -325,6 +379,9 @@
   .recuerdos-intro__aside { max-width: 460px; }
   .recuerdo-card:nth-child(n) { grid-column: span 6; }
   .agenda-editorial-banner .recuerdos-content { padding-top: 42px; }
+  .detail-editorial-banner .recuerdos-content { padding-top: 42px; }
+  .detail-editorial-banner .recuerdos-intro { flex-direction: column; }
+  .detail-editorial-banner .recuerdos-intro__aside { padding-top: 0; max-width: 460px; }
 }
 
 @media (max-width: 560px) {
@@ -337,6 +394,7 @@
   .recuerdo-card--featured { grid-row: span 4 !important; }
   .recuerdos-footer { flex-direction: column; gap: .6rem; }
   .agenda-editorial-banner .recuerdos-content { padding: 42px 0 24px; }
+  .detail-editorial-banner .recuerdos-content { padding: 42px 0 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
