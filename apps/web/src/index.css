@@ -202,18 +202,6 @@
   border-bottom: 0;
 }
 
-.defense-modal-enter {
-  animation: defense-modal-enter .24s ease-out both;
-}
-
-@keyframes defense-modal-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .defense-modal-enter { animation: none; }
-}
 
 .detail-editorial-meta {
   display: flex;

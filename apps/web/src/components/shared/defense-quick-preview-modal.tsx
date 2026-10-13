@@ -98,7 +98,7 @@ export const DefenseQuickPreviewModal: React.FC<DefenseQuickPreviewModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="defense-modal-enter relative h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl rounded-2xl">
+      <DialogContent className="z-[60] h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-4xl overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl rounded-2xl">
         {/* Modal Top Institutional Header */}
         <div className="shrink-0 bg-white text-slate-900 p-5 sm:p-6 lg:px-8 border-b border-slate-200">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2.5">
