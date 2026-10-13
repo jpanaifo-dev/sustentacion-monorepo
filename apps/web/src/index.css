@@ -181,6 +181,12 @@
   text-wrap: balance;
 }
 
+.public-detail > main > .grid > :last-child {
+  max-width: 56rem;
+  width: 100%;
+  justify-self: center;
+}
+
 .detail-editorial-banner .recuerdos-intro__aside {
   flex: 0 1 245px;
   padding-top: 1.2rem;
@@ -210,7 +216,7 @@
 @media (min-width: 1024px) {
   .detail-editorial-banner .recuerdos-intro h1 {
     max-width: 1200px;
-    font-size: clamp(3.4rem, 5vw, 6rem);
+    font-size: clamp(3rem, 4vw, 4.8rem);
   }
 }
 

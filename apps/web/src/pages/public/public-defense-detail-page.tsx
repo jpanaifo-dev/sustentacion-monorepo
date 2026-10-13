@@ -300,11 +300,11 @@ export const PublicDefenseDetailPage: React.FC = () => {
       )}
 
       {/* 5. Main Content Grid (container mx-auto, sin max-w-5xl) */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <main className="container mx-auto max-w-[1720px] px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Tesista(s), Asesoría y Sede física (lg:col-span-4) */}
+          {/* Aside: sustentantes, asesores, jurados y ficha de programación */}
           <div className="space-y-6 lg:col-span-4">
-            {/* Card: Sustentante(s) / Candidato(s) al Grado */}
+            {/* Card: Sustentantes */}
             <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-5">
               <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
                 <div className="flex items-center gap-2.5">
@@ -313,7 +313,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
-                      Candidato(s) al Grado
+                      Sustentantes
                     </h2>
                     <p className="text-[11px] text-slate-500">Sustentante(s) postulante(s)</p>
                   </div>
@@ -370,7 +370,7 @@ export const PublicDefenseDetailPage: React.FC = () => {
                     </div>
                     <div>
                       <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
-                        Dirección de Tesis
+                        Asesores
                       </h2>
                       <p className="text-[11px] text-slate-500">Asesoría metodológica y científica</p>
                     </div>
@@ -405,6 +405,41 @@ export const PublicDefenseDetailPage: React.FC = () => {
                 </div>
               </section>
             )}
+
+            {/* Card: Jurados en el resumen lateral */}
+            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
+                <div>
+                  <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
+                    Jurados
+                  </h2>
+                  <p className="text-[11px] text-slate-500">Comité calificador de la sustentación</p>
+                </div>
+                <span className="text-[11px] font-mono font-bold text-stone-600 bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-xs">
+                  {jurors.length}
+                </span>
+              </div>
+
+              {sortedJurors.length === 0 ? (
+                <p className="text-xs text-slate-500 italic">Jurados pendientes de designación.</p>
+              ) : (
+                <div className="space-y-3">
+                  {sortedJurors.map((j) => (
+                    <div key={j.id} className="flex items-center gap-3 border-b border-stone-200/80 pb-3 last:border-0 last:pb-0">
+                      <PersonAvatar person={j.person} className="h-10 w-10" />
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-bold text-[#091E3A] leading-snug">
+                          {j.person.first_name} {j.person.last_name}
+                        </h3>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">
+                          {getJurorRoleLabel(j.role)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             {/* Card: Ubicación del Acto Académico */}
             {defense.space && (
@@ -459,12 +494,51 @@ export const PublicDefenseDetailPage: React.FC = () => {
                 </div>
               </section>
             )}
+
+            {/* Card: horario, sede, ubicación y estado */}
+            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
+                <div>
+                  <h2 className="text-xs font-bold text-[#091E3A] uppercase tracking-wider">
+                    Programación del acto
+                  </h2>
+                  <p className="text-[11px] text-slate-500">Horario y ubicación oficial</p>
+                </div>
+                {defense.status === 'CONFIRMED' && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-xs">
+                    Verificada
+                  </span>
+                )}
+              </div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                <div>
+                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Fecha</dt>
+                  <dd className="font-semibold text-[#091E3A] mt-0.5">{dateParts.dayStr} {dateParts.monthStr} {dateParts.year}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Horario</dt>
+                  <dd className="font-semibold text-[#091E3A] mt-0.5">{formatTime(defense.start_time)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Modalidad</dt>
+                  <dd className="font-semibold text-[#091E3A] mt-0.5">{getModalityLabel(defense.modality)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Sede</dt>
+                  <dd className="font-semibold text-[#091E3A] mt-0.5 truncate">{defense.facility?.name || 'Escuela de Postgrado UNAP'}</dd>
+                </div>
+                <div className="col-span-2 border-t border-stone-200 pt-3">
+                  <dt className="text-[10px] uppercase tracking-wider text-slate-500">Ubicación / espacio</dt>
+                  <dd className="font-semibold text-[#091E3A] mt-0.5">{defense.space?.name || (defense.modality === 'VIRTUAL' ? 'Plataforma virtual' : 'Por asignar')}</dd>
+                </div>
+              </dl>
+            </section>
           </div>
 
-          {/* Right Column: Jurado Calificador Oficial y Protocolo (lg:col-span-8) */}
+          {/* Body: protocolo y documentación del acto */}
           <div className="space-y-6 lg:col-span-8">
             {/* Card: Jurado Calificador Designado */}
-            <section className="bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 sm:p-7 shadow-xs space-y-6">
+            <section className="hidden bg-[#FFFDF8] border border-stone-300/80 rounded-sm p-6 sm:p-7 shadow-xs space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-sm bg-[#091E3A] text-white flex items-center justify-center shrink-0">
